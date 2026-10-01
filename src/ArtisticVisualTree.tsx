@@ -394,10 +394,6 @@ export const ArtisticVisualTree: React.FC<ArtisticVisualTreeProps> = ({
         return next;
       });
     }
-    setPosition({
-      x: 1050 - vn.x * scale,
-      y: 450 - vn.y * scale,
-    });
   };
 
   return (
@@ -767,8 +763,12 @@ export const ArtisticVisualTree: React.FC<ArtisticVisualTreeProps> = ({
           {selectedVisualNode && (
             <div 
               style={{
-                left: `${Math.min(1760, Math.max(30, selectedVisualNode.x + 45))}px`,
-                top: `${Math.min(640, Math.max(60, selectedVisualNode.y - 70))}px`,
+                left: `${
+                  selectedVisualNode.x > 1150
+                    ? Math.max(30, selectedVisualNode.x - 340)
+                    : Math.min(1760, selectedVisualNode.x + 45)
+                }px`,
+                top: `${Math.min(640, Math.max(50, selectedVisualNode.y - 70))}px`,
               }}
               className="absolute z-40 w-72 sm:w-80 bg-stone-900/95 backdrop-blur-md rounded-2xl border-2 border-amber-500/60 p-4 shadow-2xl text-amber-100 flex flex-col gap-2.5 font-serif no-pan pointer-events-auto"
             >
