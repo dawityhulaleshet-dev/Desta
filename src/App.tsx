@@ -35,12 +35,15 @@ import {
   LayoutDashboard,
   FileDown,
   Sun,
-  Moon
+  Moon,
+  Menu,
+  X
 } from 'lucide-react';
 
 export default function App() {
   const [treeData, setTreeData] = useState<FamilyNode>(initialTreeData);
   const [theme, setTheme] = useState<'dark' | 'light'>('light');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterUncertainOnly, setFilterUncertainOnly] = useState(false);
   const [activeTab, setActiveTab] = useState<'visual' | 'topdown' | 'tree' | 'branches' | 'dashboard'>('visual');
@@ -338,12 +341,25 @@ export default function App() {
         : 'bg-slate-950 text-slate-100 selection:bg-amber-500 selection:text-slate-950'
     }`}>
       {/* Top Navbar */}
-      {/* Top Navbar */}
       <header className={`border-b sticky top-0 z-40 px-3 sm:px-6 py-2.5 w-full transition-colors ${
         isLight ? 'border-slate-200 bg-white/95 backdrop-blur shadow-xs' : 'border-slate-850 bg-slate-950/90 backdrop-blur'
       }`}>
-        <div className="w-full flex flex-row items-center justify-between gap-3 overflow-x-auto">
+        <div className="w-full flex flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2.5 shrink-0">
+            {/* Hamburger Button for Mobile Side Menu */}
+            <button
+              onClick={() => setIsMobileMenuOpen(true)}
+              className={`md:hidden p-2 rounded-xl border transition-all active:scale-95 ${
+                isLight 
+                  ? 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700 shadow-2xs' 
+                  : 'bg-slate-900 hover:bg-slate-850 border-slate-800 text-amber-300'
+              }`}
+              title="ምናሌ ክፈት (Open Menu)"
+              aria-label="Open mobile menu"
+            >
+              <Menu size={18} />
+            </button>
+
             <h1 className={`text-base sm:text-lg font-bold tracking-tight ${
               isLight ? 'text-slate-900' : 'text-white'
             }`}>
@@ -351,8 +367,8 @@ export default function App() {
             </h1>
           </div>
 
-          {/* Navigation Tabs in Main Header */}
-          <nav className={`flex items-center p-1 rounded-xl border gap-1 transition-colors overflow-x-auto max-w-full ${
+          {/* Navigation Tabs in Main Header (Desktop/Tablet) */}
+          <nav className={`hidden md:flex items-center p-1 rounded-xl border gap-1 transition-colors overflow-x-auto max-w-full ${
             isLight ? 'bg-slate-200/60 border-slate-300/70' : 'bg-slate-900 border-slate-800'
           }`}>
             <button
@@ -413,8 +429,8 @@ export default function App() {
           </nav>
 
           <div className="flex items-center gap-2 shrink-0">
-            {/* Search Input in Header */}
-            <div className="relative">
+            {/* Search Input in Header (Desktop/Tablet) */}
+            <div className="hidden md:block relative">
               <Search size={13} className={`absolute left-3 top-1/2 -translate-y-1/2 ${isLight ? 'text-slate-400' : 'text-slate-500'}`} />
               <input
                 type="text"
@@ -442,9 +458,10 @@ export default function App() {
             {/* Slot for Artistic Tree Zoom & Search Controls Portal */}
             <div id="header-right-controls" className="flex items-center gap-1.5" />
 
+            {/* PDF Button (Desktop/Tablet) */}
             <button
               onClick={() => setIsPdfModalOpen(true)}
-              className={`px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-2 transition-all duration-150 active:scale-95 shadow-2xs ${
+              className={`hidden md:flex px-3 py-1.5 rounded-xl border text-xs font-semibold items-center gap-2 transition-all duration-150 active:scale-95 shadow-2xs ${
                 isLight 
                   ? 'bg-slate-900 hover:bg-slate-800 text-white border-slate-900' 
                   : 'bg-white hover:bg-slate-100 text-slate-950 border-white'
@@ -452,8 +469,7 @@ export default function App() {
               title="PDF አውርድ (Download PDF Report)"
             >
               <FileDown size={14} className={isLight ? 'text-amber-400' : 'text-sky-600'} />
-              <span className="hidden sm:inline">PDF አውርድ</span>
-              <span className="sm:hidden">PDF</span>
+              <span>PDF አውርድ</span>
             </button>
 
             <button
@@ -482,6 +498,197 @@ export default function App() {
           </div>
         </div>
       </header>
+
+      {/* Mobile Side Menu Bar (Slide-over Drawer) */}
+      {isMobileMenuOpen && (
+        <div className="fixed inset-0 z-50 md:hidden flex">
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in"
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+
+          {/* Drawer Content */}
+          <div className={`relative w-[85%] max-w-[320px] h-full shadow-2xl z-10 flex flex-col justify-between border-r transition-transform duration-300 ease-out animate-in slide-in-from-left ${
+            isLight ? 'bg-white border-slate-200 text-slate-900' : 'bg-slate-950 border-slate-800 text-white'
+          }`}>
+            {/* Drawer Header */}
+            <div className={`p-4 border-b flex items-center justify-between ${
+              isLight ? 'border-slate-200 bg-slate-50/70' : 'border-slate-850 bg-slate-900/50'
+            }`}>
+              <div className="flex items-center gap-2.5">
+                <span className="p-1.5 rounded-xl bg-amber-500/20 text-amber-500 font-bold">
+                  🌳
+                </span>
+                <div>
+                  <h2 className="text-sm font-bold tracking-tight">የደስታ የቤተሰብ</h2>
+                  <p className="text-[11px] opacity-60">፯ ቅርንጫፎች · {stats.totalMembers} አባላት</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={`p-1.5 rounded-lg transition-colors ${
+                  isLight ? 'text-slate-500 hover:bg-slate-200' : 'text-slate-400 hover:bg-slate-800'
+                }`}
+                title="ዝጋ (Close)"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Drawer Body */}
+            <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
+              {/* 1. Search Input in Side Menu */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] font-semibold uppercase tracking-wider opacity-60">
+                  አባል ፈልግ (Search)
+                </label>
+                <div className="relative">
+                  <Search size={14} className={`absolute left-3 top-1/2 -translate-y-1/2 ${isLight ? 'text-slate-400' : 'text-slate-500'}`} />
+                  <input
+                    type="text"
+                    placeholder="የአባሉን ስም ፈልግ..."
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    className={`w-full pl-9 pr-8 py-2 rounded-xl border text-xs focus:outline-none transition-all ${
+                      isLight 
+                        ? 'bg-slate-50 focus:bg-white border-slate-200 text-slate-900 focus:border-amber-500' 
+                        : 'bg-slate-900 focus:bg-slate-850 border-slate-800 text-white focus:border-amber-400'
+                    }`}
+                  />
+                  {searchQuery && (
+                    <button 
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 rounded-full text-xs opacity-60 hover:opacity-100"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* 2. Navigation Tabs in Side Menu */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] font-semibold uppercase tracking-wider opacity-60">
+                  ክፍሎች (Navigation)
+                </label>
+                <nav className="flex flex-col gap-1">
+                  <button
+                    onClick={() => { setActiveTab('visual'); setIsMobileMenuOpen(false); }}
+                    className={`w-full px-3 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2.5 transition-all active:scale-[0.98] ${
+                      activeTab === 'visual'
+                        ? 'bg-amber-500 text-slate-950 font-bold shadow-xs'
+                        : isLight ? 'text-slate-700 hover:bg-slate-100' : 'text-slate-300 hover:bg-slate-900'
+                    }`}
+                  >
+                    <Sparkles size={15} className={activeTab === 'visual' ? 'text-slate-950' : 'text-amber-500'} />
+                    <span className="flex-1 text-left">ሥዕላዊ ዛፍ (Artistic Tree)</span>
+                    {activeTab === 'visual' && <ChevronRight size={13} />}
+                  </button>
+
+                  <button
+                    onClick={() => { setActiveTab('topdown'); setIsMobileMenuOpen(false); }}
+                    className={`w-full px-3 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2.5 transition-all active:scale-[0.98] ${
+                      activeTab === 'topdown'
+                        ? isLight ? 'bg-sky-500 text-white font-bold shadow-xs' : 'bg-sky-600 text-white font-bold shadow-xs'
+                        : isLight ? 'text-slate-700 hover:bg-slate-100' : 'text-slate-300 hover:bg-slate-900'
+                    }`}
+                  >
+                    <Network size={15} className={activeTab === 'topdown' ? 'text-white' : 'text-sky-500'} />
+                    <span className="flex-1 text-left">ዛፍ (Top-to-Bottom Tree)</span>
+                    {activeTab === 'topdown' && <ChevronRight size={13} />}
+                  </button>
+
+                  <button
+                    onClick={() => { setActiveTab('tree'); setIsMobileMenuOpen(false); }}
+                    className={`w-full px-3 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2.5 transition-all active:scale-[0.98] ${
+                      activeTab === 'tree'
+                        ? isLight ? 'bg-sky-500 text-white font-bold shadow-xs' : 'bg-sky-600 text-white font-bold shadow-xs'
+                        : isLight ? 'text-slate-700 hover:bg-slate-100' : 'text-slate-300 hover:bg-slate-900'
+                    }`}
+                  >
+                    <ListTree size={15} className={activeTab === 'tree' ? 'text-white' : 'text-sky-500'} />
+                    <span className="flex-1 text-left">ዝርዝር (List Hierarchy)</span>
+                    {activeTab === 'tree' && <ChevronRight size={13} />}
+                  </button>
+
+                  <button
+                    onClick={() => { setActiveTab('branches'); setIsMobileMenuOpen(false); }}
+                    className={`w-full px-3 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2.5 transition-all active:scale-[0.98] ${
+                      activeTab === 'branches'
+                        ? isLight ? 'bg-sky-500 text-white font-bold shadow-xs' : 'bg-sky-600 text-white font-bold shadow-xs'
+                        : isLight ? 'text-slate-700 hover:bg-slate-100' : 'text-slate-300 hover:bg-slate-900'
+                    }`}
+                  >
+                    <Layers size={15} className={activeTab === 'branches' ? 'text-white' : 'text-sky-500'} />
+                    <span className="flex-1 text-left">ቅርንጫፎች (7 Branches)</span>
+                    {activeTab === 'branches' && <ChevronRight size={13} />}
+                  </button>
+
+                  <button
+                    onClick={() => { setActiveTab('dashboard'); setIsMobileMenuOpen(false); }}
+                    className={`w-full px-3 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2.5 transition-all active:scale-[0.98] ${
+                      activeTab === 'dashboard'
+                        ? isLight ? 'bg-sky-500 text-white font-bold shadow-xs' : 'bg-sky-600 text-white font-bold shadow-xs'
+                        : isLight ? 'text-slate-700 hover:bg-slate-100' : 'text-slate-300 hover:bg-slate-900'
+                    }`}
+                  >
+                    <LayoutDashboard size={15} className={activeTab === 'dashboard' ? 'text-white' : 'text-sky-500'} />
+                    <span className="flex-1 text-left">ማጠቃለያ (Summary Dashboard)</span>
+                    {activeTab === 'dashboard' && <ChevronRight size={13} />}
+                  </button>
+                </nav>
+              </div>
+
+              {/* 3. Action Buttons Section */}
+              <div className="flex flex-col gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+                <button
+                  onClick={() => { setIsPdfModalOpen(true); setIsMobileMenuOpen(false); }}
+                  className={`w-full py-2.5 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 transition-all active:scale-95 shadow-sm ${
+                    isLight 
+                      ? 'bg-slate-900 hover:bg-slate-800 text-white border-slate-900' 
+                      : 'bg-white hover:bg-slate-100 text-slate-950 border-white'
+                  }`}
+                >
+                  <FileDown size={14} className={isLight ? 'text-amber-400' : 'text-sky-600'} />
+                  <span>PDF አውርድ (Download PDF Report)</span>
+                </button>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => setTheme(prev => prev === 'light' ? 'dark' : 'light')}
+                    className={`py-2 px-3 rounded-xl border text-xs font-medium flex items-center justify-center gap-1.5 transition-all active:scale-95 ${
+                      isLight
+                        ? 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-800'
+                        : 'bg-slate-900 hover:bg-slate-800 border-slate-800 text-slate-200'
+                    }`}
+                  >
+                    {isLight ? <Moon size={13} /> : <Sun size={13} className="text-amber-400" />}
+                    <span>{isLight ? 'ጨለማ ገጽታ' : 'ብርሃን ገጽታ'}</span>
+                  </button>
+
+                  <button
+                    onClick={() => { handleResetData(); setIsMobileMenuOpen(false); }}
+                    className={`py-2 px-3 rounded-xl border text-xs font-medium flex items-center justify-center gap-1.5 transition-all active:scale-95 ${
+                      isLight
+                        ? 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-800'
+                        : 'bg-slate-900 hover:bg-slate-800 border-slate-800 text-slate-200'
+                    }`}
+                  >
+                    <RotateCcw size={13} />
+                    <span>ዳግም አስጀምር</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Drawer Footer */}
+            <div className="p-3 border-t border-slate-200 dark:border-slate-850 text-[10px] text-center opacity-50 font-serif">
+              የደስታ ቤተሰብ ታሪክ ማህደር
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main Body */}
       <main className="flex-1 w-full px-3 sm:px-6 py-3 flex flex-col gap-3">

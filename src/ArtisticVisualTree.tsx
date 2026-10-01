@@ -885,8 +885,8 @@ export const ArtisticVisualTree: React.FC<ArtisticVisualTreeProps> = ({
       {/* 0. Header Right Portal */}
       {portalTarget && createPortal(controlsBar, portalTarget)}
 
-      {/* 1. Header Overlay (Top Left Brand - Horizontal) */}
-      <div className="absolute top-4 left-4 z-20 pointer-events-none">
+      {/* 1. Header Overlay (Top Left Brand - Hidden on Mobile) */}
+      <div className="hidden sm:block absolute top-4 left-4 z-20 pointer-events-none">
         <div className="bg-slate-950/85 backdrop-blur-md px-3.5 py-1.5 rounded-xl border border-amber-500/35 shadow-xl pointer-events-auto flex items-center gap-2">
           <span className="p-1 rounded-lg bg-amber-500/20 text-amber-400">
             <Sparkles size={14} />
