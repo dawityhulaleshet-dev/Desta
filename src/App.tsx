@@ -12,6 +12,7 @@ import {
 import { TopToBottomTree } from './TopToBottomTree';
 import { SummaryDashboard } from './SummaryDashboard';
 import { LeftSummaryMenuBar } from './LeftSummaryMenuBar';
+import { ArtisticVisualTree } from './ArtisticVisualTree';
 import { PdfExportModal } from './PdfExportModal';
 import { 
   Share2, 
@@ -42,7 +43,7 @@ export default function App() {
   const [theme, setTheme] = useState<'dark' | 'light'>('light');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterUncertainOnly, setFilterUncertainOnly] = useState(false);
-  const [activeTab, setActiveTab] = useState<'topdown' | 'tree' | 'branches' | 'dashboard'>('topdown');
+  const [activeTab, setActiveTab] = useState<'visual' | 'topdown' | 'tree' | 'branches' | 'dashboard'>('visual');
   const [selectedNode, setSelectedNode] = useState<FlattenedNode | null>(null);
   const [expandedNodes, setExpandedNodes] = useState<Record<string, boolean>>({});
   const [activeBranchIndex, setActiveBranchIndex] = useState<number>(0);
@@ -417,6 +418,17 @@ export default function App() {
             isLight ? 'bg-slate-200/60 border-slate-300/70' : 'bg-slate-900 border-slate-800'
           }`}>
             <button
+              onClick={() => setActiveTab('visual')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 active:scale-[0.98] flex items-center gap-1.5 ${
+                activeTab === 'visual'
+                  ? isLight ? 'bg-amber-500 text-slate-950 shadow-xs font-bold' : 'bg-amber-400 text-slate-950 shadow-xs font-bold'
+                  : isLight ? 'text-amber-900 hover:text-amber-950 hover:bg-amber-100/60 font-medium' : 'text-amber-300 hover:text-white hover:bg-amber-500/10'
+              }`}
+            >
+              <Sparkles size={13} className={activeTab === 'visual' ? 'text-slate-950' : 'text-amber-500'} />
+              <span>ሥዕላዊ ዛፍ (Artistic Tree)</span>
+            </button>
+            <button
               onClick={() => setActiveTab('topdown')}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 active:scale-[0.98] flex items-center gap-1.5 ${
                 activeTab === 'topdown'
@@ -529,6 +541,21 @@ export default function App() {
           </div>
         </div>
 
+        {/* Tab -1: Artistic Visual Tree (Botanical Oil Painting View) */}
+        {activeTab === 'visual' && (
+          <div className="w-full flex flex-col gap-3">
+            <ArtisticVisualTree
+              rootNode={treeData}
+              selectedNode={selectedNode}
+              onSelectNode={setSelectedNode}
+              onEditNode={handleStartEdit}
+              stats={stats}
+              theme={theme}
+              onOpenPdfModal={() => setIsPdfModalOpen(true)}
+            />
+          </div>
+        )}
+
         {/* Tab 0: Top to Bottom Tree */}
         {activeTab === 'topdown' && (
           <div className="flex flex-col lg:flex-row items-start gap-3 w-full flex-1 min-h-0">
@@ -540,6 +567,7 @@ export default function App() {
               activeBranchIndex={selectedTreeBranchIndex}
               onSelectBranch={setSelectedTreeBranchIndex}
               onOpenFullDashboard={() => setActiveTab('dashboard')}
+              onOpenArtisticTree={() => setActiveTab('visual')}
               filterUncertainOnly={filterUncertainOnly}
               onToggleFilterUncertain={() => setFilterUncertainOnly(!filterUncertainOnly)}
               onOpenPdfModal={() => setIsPdfModalOpen(true)}

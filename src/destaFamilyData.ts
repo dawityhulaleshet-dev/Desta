@@ -15,6 +15,7 @@ export interface FamilyNode {
 export const destaFamilyData: FamilyNode = {
   "name": "ደስታ",
   "children": [
+    // 1, ተስፋዬ ደስታ
     {
       "name": "ተስፋዬ ደስታ [?]",
       "children": [
@@ -101,71 +102,41 @@ export const destaFamilyData: FamilyNode = {
           ]
         },
         {
-          "name": "ብርሃኑ ተስፋዬ [?]",
-          "children": [
-            {
-              "name": "ኤርሚያስ ብርሃኑ [?]",
-              "children": []
-            },
-            {
-              "name": "ናሆም ብርሃኑ [?]",
-              "children": []
-            }
-          ]
+          "name": "ተሾመ ተስፋዬ [?]",
+          "children": []
+        },
+        {
+          "name": "ተፈራ ተስፋዬ [?]",
+          "children": []
+        },
+        {
+          "name": "ሙሉነህ ተስፋዬ [?]",
+          "children": []
         },
         {
           "name": "ዮሐንስ ተስፋዬ [?]",
           "children": []
         },
         {
-          "name": "ማሞ ተስፋዬ [?]",
+          "name": "ብርሃኑ ተስፋዬ [?]",
           "children": []
         },
         {
-          "name": "ከበደ ተስፋዬ [?]",
+          "name": "ዳዊት ተስፋዬ [?]",
           "children": []
         },
         {
-          "name": "ተፈራ ተስፋዬ [?]",
+          "name": "ሙሉጌታ ተስፋዬ [?]",
+          "children": []
+        },
+        {
+          "name": "ዘውዴ ተስፋዬ [?]",
           "children": []
         }
       ]
     },
-    {
-      "name": "አቶ ሳይኮን ደስታ [?]",
-      "children": [
-        {
-          "name": "ደምሰው ሳይኮን [?]",
-          "children": [
-            {
-              "name": "ይደግፍ ደምሰው",
-              "children": [
-                {
-                  "name": "ይቻላል ደረስ [?]",
-                  "children": []
-                },
-                {
-                  "name": "ቃልኪዳን ደረስ [?]",
-                  "children": []
-                },
-                {
-                  "name": "ሰንደቅ ደረስ [?]",
-                  "children": []
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "name": "እትረሳይ ሳይኮን [?]",
-          "children": []
-        },
-        {
-          "name": "ንጉሡ ሳይኮን [?]",
-          "children": []
-        }
-      ]
-    },
+
+    // 2, አቶ አያሌው ደስታ
     {
       "name": "አቶ አያሌው ደስታ [?]",
       "children": [
@@ -247,8 +218,47 @@ export const destaFamilyData: FamilyNode = {
         }
       ]
     },
+
+    // 3, አቶ ሳይኮን ደስታ
     {
-      "name": "አብርሃም ደስታ",
+      "name": "አቶ ሳይኮን ደስታ [?]",
+      "children": [
+        {
+          "name": "ደምሰው ሳይኮን [?]",
+          "children": [
+            {
+              "name": "ይደግፍ ደምሰው",
+              "children": [
+                {
+                  "name": "ይቻላል ደረስ [?]",
+                  "children": []
+                },
+                {
+                  "name": "ቃልኪዳን ደረስ [?]",
+                  "children": []
+                },
+                {
+                  "name": "ሰንደቅ ደረስ [?]",
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "እትረሳይ ሳይኮን [?]",
+          "children": []
+        },
+        {
+          "name": "ንጉሡ ሳይኮን [?]",
+          "children": []
+        }
+      ]
+    },
+
+    // 4, አቶ አብርሃም ደስታ
+    {
+      "name": "አቶ አብርሃም ደስታ",
       "children": [
         {
           "name": "አሰፋችኝ አብርሃም [?]",
@@ -305,6 +315,66 @@ export const destaFamilyData: FamilyNode = {
         }
       ]
     },
+
+    // 5, ወ/ሮ እጅጋየሁ ደስታ
+    {
+      "name": "ወ/ሮ እጅጋየሁ ደስታ [?]",
+      "children": [
+        {
+          "name": "መስፍን [?]",
+          "children": [
+            {
+              "name": "ተፈራ መስፍን [?]",
+              "children": []
+            },
+            {
+              "name": "አበባየሁ መስፍን [?]",
+              "children": []
+            }
+          ]
+        },
+        {
+          "name": "ጎሹ [?]",
+          "children": [
+            {
+              "name": "ዮሐንስ ጎሹ [?]",
+              "children": []
+            }
+          ]
+        },
+        {
+          "name": "ተክለ [?]",
+          "children": []
+        },
+        {
+          "name": "እጅጋየሁ [?]",
+          "children": []
+        },
+        {
+          "name": "እመቤት [?]",
+          "children": []
+        },
+        {
+          "name": "ሰለሞን [?]",
+          "children": [
+            {
+              "name": "ዳንኤል ሰለሞን [?]",
+              "children": []
+            },
+            {
+              "name": "ሩት ሰለሞን [?]",
+              "children": []
+            }
+          ]
+        },
+        {
+          "name": "ማርቆስ [?]",
+          "children": []
+        }
+      ]
+    },
+
+    // 6, ከበደ ደስታ
     {
       "name": "ከበደ ደስታ [?]",
       "children": [
@@ -373,62 +443,8 @@ export const destaFamilyData: FamilyNode = {
         }
       ]
     },
-    {
-      "name": "ወ/ሮ እጅጋየሁ ደስታ [?]",
-      "children": [
-        {
-          "name": "መስፍን [?]",
-          "children": [
-            {
-              "name": "ተፈራ መስፍን [?]",
-              "children": []
-            },
-            {
-              "name": "አበባየሁ መስፍን [?]",
-              "children": []
-            }
-          ]
-        },
-        {
-          "name": "ጎሹ [?]",
-          "children": [
-            {
-              "name": "ዮሐንስ ጎሹ [?]",
-              "children": []
-            }
-          ]
-        },
-        {
-          "name": "ተክለ [?]",
-          "children": []
-        },
-        {
-          "name": "እጅጋየሁ [?]",
-          "children": []
-        },
-        {
-          "name": "እመቤት [?]",
-          "children": []
-        },
-        {
-          "name": "ሰለሞን [?]",
-          "children": [
-            {
-              "name": "ዳንኤል ሰለሞን [?]",
-              "children": []
-            },
-            {
-              "name": "ሩት ሰለሞን [?]",
-              "children": []
-            }
-          ]
-        },
-        {
-          "name": "ማርቆስ [?]",
-          "children": []
-        }
-      ]
-    },
+
+    // 7, ወንድሙ ደስታ
     {
       "name": "ወንድሙ ደስታ [?]",
       "children": [

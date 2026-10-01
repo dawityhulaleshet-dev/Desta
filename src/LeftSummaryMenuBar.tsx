@@ -25,6 +25,7 @@ interface LeftSummaryMenuBarProps {
   filterUncertainOnly?: boolean;
   onToggleFilterUncertain?: () => void;
   onOpenPdfModal?: () => void;
+  onOpenArtisticTree?: () => void;
 }
 
 const GEEZ_NUMS = ['፩', '፪', '፫', '፬', '፭', '፮', '፯'];
@@ -44,6 +45,7 @@ export const LeftSummaryMenuBar: React.FC<LeftSummaryMenuBarProps> = ({
   filterUncertainOnly = false,
   onToggleFilterUncertain,
   onOpenPdfModal,
+  onOpenArtisticTree,
 }) => {
   const isLight = theme === 'light';
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -294,6 +296,24 @@ export const LeftSummaryMenuBar: React.FC<LeftSummaryMenuBarProps> = ({
 
       {/* Footer Action Buttons */}
       <div className="border-t pt-2.5 flex flex-col gap-1.5 mt-auto">
+        {onOpenArtisticTree && (
+          <button
+            type="button"
+            onClick={onOpenArtisticTree}
+            className={`w-full py-2 px-3 rounded-xl border text-xs font-semibold flex items-center justify-between transition-all duration-150 active:scale-95 ${
+              isLight 
+                ? 'bg-amber-50 hover:bg-amber-100 border-amber-300 text-amber-900 shadow-2xs' 
+                : 'bg-amber-950/40 hover:bg-amber-900/50 border-amber-700/60 text-amber-200'
+            }`}
+          >
+            <span className="flex items-center gap-1.5">
+              <span className="text-amber-500">✨</span>
+              <span>ሥዕላዊ ዛፍ (Artistic Tree)</span>
+            </span>
+            <ArrowUpRight size={13} />
+          </button>
+        )}
+
         {onOpenFullDashboard && (
           <button
             type="button"

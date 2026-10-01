@@ -22,7 +22,7 @@ interface SummaryDashboardProps {
   stats: TreeStats;
   theme?: 'dark' | 'light';
   onSelectBranch: (branchIndex: number) => void;
-  onNavigateTab: (tab: 'topdown' | 'tree' | 'branches') => void;
+  onNavigateTab: (tab: 'visual' | 'topdown' | 'tree' | 'branches') => void;
   onEditNode: (node: FlattenedNode) => void;
   onOpenPdfModal?: () => void;
 }
@@ -123,6 +123,18 @@ export const SummaryDashboard: React.FC<SummaryDashboardProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => onNavigateTab('visual')}
+            className={`px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-all duration-150 active:scale-95 ${
+              isLight
+                ? 'bg-amber-50 hover:bg-amber-100 border-amber-300 text-amber-900 shadow-2xs'
+                : 'bg-amber-950/40 hover:bg-amber-900/50 border-amber-700/60 text-amber-200'
+            }`}
+          >
+            <Sparkles size={13} className="text-amber-500" />
+            <span>ሥዕላዊ ዛፍ (Artistic Tree)</span>
+          </button>
+
           <button
             onClick={() => onNavigateTab('topdown')}
             className={`px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-all duration-150 active:scale-95 ${
