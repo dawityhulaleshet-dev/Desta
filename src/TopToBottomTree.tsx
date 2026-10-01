@@ -190,14 +190,17 @@ export const TopToBottomTree: React.FC<TopToBottomTreeProps> = ({
     }
   }, []);
 
-  // Pan events
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if ((e.target as HTMLElement).closest('button, input, select')) return;
+  // Unified pointer pan events
+  const onPointerDown = (e: React.PointerEvent) => {
+    if ((e.target as HTMLElement).closest('button, input, select, a, .no-pan')) return;
     setIsDragging(true);
     setDragStart({ x: e.clientX - position.x, y: e.clientY - position.y });
+    try {
+      (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    } catch {}
   };
 
-  const handleMouseMove = (e: React.MouseEvent) => {
+  const onPointerMove = (e: React.PointerEvent) => {
     if (!isDragging) return;
     setPosition({
       x: e.clientX - dragStart.x,
@@ -205,7 +208,12 @@ export const TopToBottomTree: React.FC<TopToBottomTreeProps> = ({
     });
   };
 
-  const handleMouseUp = () => setIsDragging(false);
+  const onPointerUp = (e: React.PointerEvent) => {
+    setIsDragging(false);
+    try {
+      (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {}
+  };
 
   // Wheel zoom
   const handleWheel = (e: React.WheelEvent) => {
@@ -377,12 +385,12 @@ export const TopToBottomTree: React.FC<TopToBottomTreeProps> = ({
       {/* Canvas Viewport */}
       <div 
         ref={containerRef}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
         onWheel={handleWheel}
-        className={`w-full h-[700px] lg:h-[780px] overflow-hidden relative cursor-grab active:cursor-grabbing select-none transition-colors ${
+        className={`w-full h-[65vh] sm:h-[720px] lg:h-[780px] overflow-hidden relative cursor-grab active:cursor-grabbing select-none touch-none transition-colors ${
           isLight
             ? 'bg-[#fcfcfd] bg-[radial-gradient(#e2e8f0_1.5px,transparent_1.5px)] [background-size:24px_24px]'
             : 'bg-[#030712] bg-[radial-gradient(#1e293b_1.5px,transparent_1.5px)] [background-size:24px_24px]'

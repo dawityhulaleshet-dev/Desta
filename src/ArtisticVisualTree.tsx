@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useMemo, useEffect, useCallback } from 'react';
 import { FamilyNode } from './destaFamilyData';
 import { FlattenedNode, getCleanName, TreeStats } from './familyUtils';
 import { 
@@ -12,7 +12,10 @@ import {
   Compass,
   CheckCircle2,
   AlertCircle,
-  X
+  X,
+  Maximize2,
+  Minimize2,
+  Move
 } from 'lucide-react';
 
 interface ArtisticVisualTreeProps {
@@ -58,15 +61,18 @@ const TREE_BACKGROUND_IMAGE = "https://res.cloudinary.com/dhylipuur/image/upload
 // Desta (G1) centered on trunk at (1050, 760)
 // Zero connection lines rendered - medallions sit directly on the painted tree branches
 const SKELETON_CONFIGS = [
-  // 1: Middle Left (ተስፋዬ ደስታ) - [1 G2] at (960, 500), 16 G3 nodes extending horizontally left
+  // 1: Middle Left (ተስፋዬ ደስታ) - [1 G2] at (960, 500), 16 G3 nodes extending horizontally left to (320, 470)
   {
     branchIdx: 0,
     circleNumber: 1,
     anchor: { x: 960, y: 500 },
-    getG3Position: (t: number, idx: number) => {
-      // Runs along middle left branch from x: 905 down to x: 395 at y ~ 500
-      const x = 905 - t * 510;
-      const y = 500 + (idx % 2 === 0 ? -11 : 11);
+    getG3Position: (t: number, idx: number, nodeName?: string) => {
+      // Runs along middle left branch from x: 905 down to x: 320 at y: 470
+      if (nodeName?.includes('ዘውዴ') || idx === 15) {
+        return { x: 320, y: 470 };
+      }
+      const x = 905 - t * 585;
+      const y = 495 - t * 25 + (idx % 2 === 0 ? -8 : 8);
       return { x, y };
     },
     getG4Position: (g3X: number, g3Y: number, g4Idx: number, g4Total: number) => {
@@ -84,8 +90,8 @@ const SKELETON_CONFIGS = [
     circleNumber: 2,
     anchor: { x: 980, y: 290 },
     getG3Position: (t: number, idx: number) => {
-      // Runs along upper left branch from x: 925 down to x: 595, y sloping gently 280 to 325
-      const x = 925 - t * 330;
+      // Runs along upper left branch from x: 925 down to x: 495 at y: 309, with all 11 G3 nodes rearranged evenly
+      const x = 925 - t * 430;
       const y = 280 + 10 * Math.sin(Math.PI * t) + t * 40 + (idx % 2 === 0 ? -11 : 11);
       return { x, y };
     },
@@ -118,15 +124,25 @@ const SKELETON_CONFIGS = [
     }
   },
 
-  // 4: Lower Left (አቶ አብርሃም ደስታ) - [4 G2] at (925, 635), G3 nodes along lower left bough
+  // 4: Lower Left (አቶ አብርሃም ደስታ) - [4 G2] at (925, 635), 10 G3 nodes along lower left bough to (420, 550)
   {
     branchIdx: 3,
     circleNumber: 4,
     anchor: { x: 925, y: 635 },
-    getG3Position: (t: number, idx: number) => {
-      // Runs along lower left bough from x: 875 down to x: 470, starting at y ~ 635
-      const x = 875 - t * 405;
-      const y = 635 + 18 * Math.sin(Math.PI * 0.6 * t) - (t > 0.5 ? (t - 0.5) * 65 : 0) + (idx % 2 === 0 ? -11 : 11);
+    getG3Position: (t: number, idx: number, nodeName?: string) => {
+      // Accurately aligned to actual tree branch limb from (875, 635) to (420, 550)
+      if (nodeName?.includes('ዮሐንስ') || idx === 9) {
+        return { x: 420, y: 550 };
+      }
+      const x = 875 - t * 455;
+      let baseY: number;
+      if (t <= 0.68) {
+        baseY = 626 + 6 * Math.sin(Math.PI * (t / 0.68));
+      } else {
+        const u = (t - 0.68) / 0.32;
+        baseY = 626 - 76 * Math.pow(u, 1.3);
+      }
+      const y = baseY + (idx % 2 === 0 ? -6 : 6);
       return { x, y };
     },
     getG4Position: (g3X: number, g3Y: number, g4Idx: number, g4Total: number) => {
@@ -138,22 +154,26 @@ const SKELETON_CONFIGS = [
     }
   },
 
-  // 5: Lower Right (ወ/ሮ እጅጋየሁ ደስታ) - [5 G2] at (1175, 650), G3 nodes curving along lower right bough
+  // 5: Lower Right (ወ/ሮ እጅጋየሁ ደስታ) - [5 G2] at (1175, 650), G3 nodes aligned along the lower right limb
   {
     branchIdx: 4,
     circleNumber: 5,
     anchor: { x: 1175, y: 650 },
-    getG3Position: (t: number, idx: number) => {
-      // Runs along lower right bough from x: 1235 out to x: 1720, starting at y ~ 635-650
-      const x = 1235 + t * 485;
-      const y = 635 + 28 * Math.sin(Math.PI * 0.6 * t) - (t > 0.5 ? (t - 0.5) * 140 : 0) + (idx % 2 === 0 ? -11 : 11);
+    getG3Position: (t: number, idx: number, nodeName?: string) => {
+      // Accurately aligned to actual tree branch centerline from (1225, 618) to (1700, 582)
+      const x = 1225 + t * 475;
+      // G3(እጅጋየሁ/እጅጋየው) and G3(እመቤት) placed at (x, 650) on the lower fork as requested
+      if (nodeName?.includes('እጅጋየ') || idx === 3 || nodeName?.includes('እመቤት') || idx === 4) {
+        return { x, y: 650 };
+      }
+      const y = 582 + 36 * Math.pow(1 - t, 1.8) + (idx % 2 === 0 ? -8 : 8);
       return { x, y };
     },
     getG4Position: (g3X: number, g3Y: number, g4Idx: number, g4Total: number) => {
       const spread = g4Total > 1 ? (g4Idx - (g4Total - 1) / 2) * 22 : 0;
       return {
         x: g3X + spread,
-        y: g3Y + 45 - (g4Idx % 2) * 16,
+        y: g3Y + 42 - (g4Idx % 2) * 14,
       };
     }
   },
@@ -183,9 +203,23 @@ const SKELETON_CONFIGS = [
     branchIdx: 6,
     circleNumber: 7,
     anchor: { x: 1140, y: 520 },
-    getG3Position: (t: number, idx: number) => {
-      // Runs horizontally along middle right branch from x: 1200 out to x: 1780 at y ~ 520
+    getG3Position: (t: number, idx: number, nodeName?: string) => {
+      // Runs along middle right branch from x: 1200 out to x: 1780
       const x = 1200 + t * 580;
+      // G3(ሀይሌ ወንድሙ) move to (x, 465)
+      if (nodeName?.includes('ኃይሌ') || nodeName?.includes('ሀይሌ') || idx === 3) {
+        return { x, y: 465 };
+      }
+      // G3(ግርማ ወንድሙ, ብርሀኑ ወንድሙ, ዮሀንስ ወንድሙ) move to (x, 480)
+      const fork480Names = ['ግርማ', 'ብርሃኑ', 'ብርሀኑ', 'ዮሐንስ', 'ዮሀንስ'];
+      if (fork480Names.some(n => nodeName?.includes(n)) || [2, 5, 7].includes(idx)) {
+        return { x, y: 480 };
+      }
+      // G3(ተስፋዬ ወንድሙ, አበበ ወንድሙ) stay at (x, 460)
+      const fork460Names = ['ተስፋዬ', 'አበበ'];
+      if (fork460Names.some(n => nodeName?.includes(n)) || [0, 1].includes(idx)) {
+        return { x, y: 460 };
+      }
       const y = 520 + (idx % 2 === 0 ? -11 : 11);
       return { x, y };
     },
@@ -211,10 +245,12 @@ export const ArtisticVisualTree: React.FC<ArtisticVisualTreeProps> = ({
   const isLight = theme === 'light';
 
   // Canvas zoom & pan state
-  const [scale, setScale] = useState<number>(1.0);
+  const [scale, setScale] = useState<number>(0.75);
   const [position, setPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [isInteracting, setIsInteracting] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [showMinimap, setShowMinimap] = useState(false);
+  const [containerSize, setContainerSize] = useState<{ width: number; height: number }>({ width: 1200, height: 700 });
 
   // Interactive filters
   const [selectedBranch, setSelectedBranch] = useState<number | null>(null);
@@ -226,6 +262,21 @@ export const ArtisticVisualTree: React.FC<ArtisticVisualTreeProps> = ({
   const [expandedG3Ids, setExpandedG3Ids] = useState<Set<string>>(new Set());
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const mainWrapperRef = useRef<HTMLDivElement>(null);
+  const activePointers = useRef<Map<number, { x: number; y: number }>>(new Map());
+  const pinchStartDist = useRef<number | null>(null);
+  const pinchStartCenter = useRef<{ x: number; y: number } | null>(null);
+  const lastPanPoint = useRef<{ x: number; y: number } | null>(null);
+  const pointerStartPos = useRef<{ x: number; y: number } | null>(null);
+  const hasMovedRef = useRef<boolean>(false);
+  const velocityTracker = useRef<{ vx: number; vy: number; lastTime: number; lastX: number; lastY: number }>({
+    vx: 0,
+    vy: 0,
+    lastTime: 0,
+    lastX: 0,
+    lastY: 0,
+  });
+  const inertiaRafRef = useRef<number | null>(null);
 
   // Compute exact coordinates for 21:9 Canvas matching 21Asset 8ldpi.svg
   const visualNodes = useMemo(() => {
@@ -289,7 +340,7 @@ export const ArtisticVisualTree: React.FC<ArtisticVisualTreeProps> = ({
 
       g3Children.forEach((g3Node, g3Idx) => {
         const t = g3Count > 1 ? g3Idx / (g3Count - 1) : 0.5;
-        const g3Pos = cfg.getG3Position(t, g3Idx);
+        const g3Pos = cfg.getG3Position(t, g3Idx, g3Node.name);
 
         const g3Flattened: FlattenedNode = {
           id: `g3-${bIdx}-${g3Idx}`,
@@ -353,36 +404,363 @@ export const ArtisticVisualTree: React.FC<ArtisticVisualTreeProps> = ({
     return visualNodes.find(vn => vn.flattened.name === selectedNode.name) || null;
   }, [selectedNode, visualNodes]);
 
-  // Pan & Zoom handlers
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if ((e.target as HTMLElement).closest('button, input, .no-pan')) return;
-    setIsDragging(true);
-    setDragStart({ x: e.clientX - position.x, y: e.clientY - position.y });
-  };
+  // Cancel active inertia glide
+  const cancelInertia = useCallback(() => {
+    if (inertiaRafRef.current !== null) {
+      cancelAnimationFrame(inertiaRafRef.current);
+      inertiaRafRef.current = null;
+    }
+  }, []);
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging) return;
-    setPosition({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y });
-  };
+  // Responsive Fit to Screen
+  const fitToScreen = useCallback((animate = true) => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const cw = rect.width;
+    const ch = rect.height;
+    if (cw <= 0 || ch <= 0) return;
 
-  const handleMouseUp = () => setIsDragging(false);
+    cancelInertia();
+    const padX = cw < 640 ? 12 : 36;
+    const padY = ch < 640 ? 12 : 36;
+    const availW = cw - padX * 2;
+    const availH = ch - padY * 2;
+    const fitScale = Math.min(availW / 2100, availH / 900);
+    const targetScale = Math.max(0.18, Math.min(1.4, +fitScale.toFixed(3)));
+    const targetX = (cw - 2100 * targetScale) / 2;
+    const targetY = (ch - 900 * targetScale) / 2;
 
-  const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
-    const zoomFactor = e.deltaY > 0 ? 0.92 : 1.08;
-    setScale(prev => Math.min(2.5, Math.max(0.45, prev * zoomFactor)));
-  };
-
-  const handleResetView = () => {
-    setScale(1.0);
-    setPosition({ x: 0, y: 0 });
+    if (animate) {
+      setIsAnimating(true);
+      setTimeout(() => setIsAnimating(false), 280);
+    }
+    setScale(targetScale);
+    setPosition({ x: targetX, y: targetY });
     setSelectedBranch(null);
     setActiveGeneration(0);
+  }, [cancelInertia]);
+
+  // Smooth Zoom toward Focal Point
+  const zoomAtPoint = useCallback((focalClientX: number, focalClientY: number, factor: number, animate = false) => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const focalX = focalClientX - rect.left;
+    const focalY = focalClientY - rect.top;
+
+    if (animate) {
+      setIsAnimating(true);
+      setTimeout(() => setIsAnimating(false), 260);
+    }
+
+    setScale(prevScale => {
+      const newScale = Math.min(3.5, Math.max(0.2, +(prevScale * factor).toFixed(3)));
+      setPosition(prevPos => {
+        const canvasX = (focalX - prevPos.x) / prevScale;
+        const canvasY = (focalY - prevPos.y) / prevScale;
+        return {
+          x: focalX - canvasX * newScale,
+          y: focalY - canvasY * newScale,
+        };
+      });
+      return newScale;
+    });
+  }, []);
+
+  const handleZoomIn = useCallback(() => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    zoomAtPoint(rect.left + rect.width / 2, rect.top + rect.height / 2, 1.25, true);
+  }, [zoomAtPoint]);
+
+  const handleZoomOut = useCallback(() => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    zoomAtPoint(rect.left + rect.width / 2, rect.top + rect.height / 2, 0.8, true);
+  }, [zoomAtPoint]);
+
+  // Initial Auto-Fit & Dynamic Container Resizing
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const handleResize = () => {
+      const rect = el.getBoundingClientRect();
+      setContainerSize({ width: rect.width, height: rect.height });
+    };
+
+    handleResize();
+    fitToScreen(false);
+
+    const observer = new ResizeObserver(handleResize);
+    observer.observe(el);
+
+    return () => observer.disconnect();
+  }, [fitToScreen]);
+
+  // Unified Pointer & Multi-Touch Drag / Pinch Handlers
+  const onPointerDown = (e: React.PointerEvent) => {
+    if ((e.target as HTMLElement).closest('button, input, a, .no-pan')) return;
+
+    cancelInertia();
+    setIsAnimating(false);
+    setIsInteracting(true);
+    hasMovedRef.current = false;
+    pointerStartPos.current = { x: e.clientX, y: e.clientY };
+
+    activePointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+    try {
+      (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    } catch {}
+
+    if (activePointers.current.size === 1) {
+      lastPanPoint.current = { x: e.clientX, y: e.clientY };
+      velocityTracker.current = {
+        vx: 0,
+        vy: 0,
+        lastTime: performance.now(),
+        lastX: e.clientX,
+        lastY: e.clientY,
+      };
+    } else if (activePointers.current.size === 2) {
+      const pts = Array.from(activePointers.current.values());
+      pinchStartDist.current = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+      pinchStartCenter.current = {
+        x: (pts[0].x + pts[1].x) / 2,
+        y: (pts[0].y + pts[1].y) / 2,
+      };
+    }
+  };
+
+  const onPointerMove = (e: React.PointerEvent) => {
+    if (!activePointers.current.has(e.pointerId)) return;
+    activePointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+    if (pointerStartPos.current) {
+      const distFromStart = Math.hypot(e.clientX - pointerStartPos.current.x, e.clientY - pointerStartPos.current.y);
+      if (distFromStart > 6) {
+        hasMovedRef.current = true;
+      }
+    }
+
+    if (activePointers.current.size === 1 && lastPanPoint.current) {
+      const dx = e.clientX - lastPanPoint.current.x;
+      const dy = e.clientY - lastPanPoint.current.y;
+      lastPanPoint.current = { x: e.clientX, y: e.clientY };
+
+      const now = performance.now();
+      const dt = now - velocityTracker.current.lastTime;
+      if (dt > 0 && dt < 120) {
+        const curVx = (e.clientX - velocityTracker.current.lastX) / dt;
+        const curVy = (e.clientY - velocityTracker.current.lastY) / dt;
+        velocityTracker.current.vx = curVx * 0.4 + velocityTracker.current.vx * 0.6;
+        velocityTracker.current.vy = curVy * 0.4 + velocityTracker.current.vy * 0.6;
+      }
+      velocityTracker.current.lastTime = now;
+      velocityTracker.current.lastX = e.clientX;
+      velocityTracker.current.lastY = e.clientY;
+
+      setPosition(p => ({ x: p.x + dx, y: p.y + dy }));
+    } else if (activePointers.current.size === 2 && pinchStartDist.current && pinchStartCenter.current) {
+      const pts = Array.from(activePointers.current.values());
+      const currentDist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+      const currentCenter = {
+        x: (pts[0].x + pts[1].x) / 2,
+        y: (pts[0].y + pts[1].y) / 2,
+      };
+
+      const factor = currentDist / pinchStartDist.current;
+      pinchStartDist.current = currentDist;
+
+      const midDx = currentCenter.x - pinchStartCenter.current.x;
+      const midDy = currentCenter.y - pinchStartCenter.current.y;
+      pinchStartCenter.current = currentCenter;
+
+      if (!containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      const focalX = currentCenter.x - rect.left;
+      const focalY = currentCenter.y - rect.top;
+
+      setScale(prevScale => {
+        const newScale = Math.min(3.5, Math.max(0.2, prevScale * factor));
+        setPosition(prevPos => {
+          const canvasX = (focalX - prevPos.x) / prevScale;
+          const canvasY = (focalY - prevPos.y) / prevScale;
+          return {
+            x: focalX - canvasX * newScale + midDx,
+            y: focalY - canvasY * newScale + midDy,
+          };
+        });
+        return newScale;
+      });
+    }
+  };
+
+  const onPointerUp = (e: React.PointerEvent) => {
+    activePointers.current.delete(e.pointerId);
+    try {
+      (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {}
+
+    if (activePointers.current.size === 0) {
+      setIsInteracting(false);
+      lastPanPoint.current = null;
+      pinchStartDist.current = null;
+      pinchStartCenter.current = null;
+
+      // Inertial Glide
+      const { vx, vy } = velocityTracker.current;
+      const speed = Math.hypot(vx, vy);
+      if (speed > 0.12) {
+        let curVx = Math.max(-28, Math.min(28, vx * 16));
+        let curVy = Math.max(-28, Math.min(28, vy * 16));
+        const glide = () => {
+          curVx *= 0.92;
+          curVy *= 0.92;
+          if (Math.abs(curVx) < 0.15 && Math.abs(curVy) < 0.15) {
+            inertiaRafRef.current = null;
+            return;
+          }
+          setPosition(p => ({ x: p.x + curVx, y: p.y + curVy }));
+          inertiaRafRef.current = requestAnimationFrame(glide);
+        };
+        inertiaRafRef.current = requestAnimationFrame(glide);
+      }
+    } else if (activePointers.current.size === 1) {
+      const remaining = Array.from(activePointers.current.values())[0];
+      lastPanPoint.current = { x: remaining.x, y: remaining.y };
+      pinchStartDist.current = null;
+      pinchStartCenter.current = null;
+    }
+  };
+
+  // Double-Click / Double-Tap to Zoom In or Reset
+  const handleDoubleClick = (e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest('button, input, a, .no-pan')) return;
+    if (scale > 1.6) {
+      fitToScreen(true);
+    } else {
+      zoomAtPoint(e.clientX, e.clientY, 1.7, true);
+    }
+  };
+
+  // Native Non-Passive Wheel & Pinch Listener (No browser warnings)
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const handleWheelNative = (e: WheelEvent) => {
+      e.preventDefault();
+      cancelInertia();
+
+      if (e.ctrlKey || e.metaKey) {
+        // Trackpad pinch-to-zoom
+        const factor = Math.exp(-e.deltaY * 0.012);
+        zoomAtPoint(e.clientX, e.clientY, factor, false);
+      } else {
+        // Mouse wheel or 2-finger scroll -> Smooth focal zoom
+        const factor = e.deltaY < 0 ? 1.10 : 0.90;
+        zoomAtPoint(e.clientX, e.clientY, factor, false);
+      }
+    };
+
+    el.addEventListener('wheel', handleWheelNative, { passive: false });
+    return () => el.removeEventListener('wheel', handleWheelNative);
+  }, [cancelInertia, zoomAtPoint]);
+
+  // Keyboard Shortcuts (Arrow keys to pan, +/- to zoom, 0/F to fit)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'TEXTAREA') return;
+
+      if (e.key === '+' || e.key === '=') {
+        e.preventDefault();
+        handleZoomIn();
+      } else if (e.key === '-' || e.key === '_') {
+        e.preventDefault();
+        handleZoomOut();
+      } else if (e.key === '0' || e.key.toLowerCase() === 'f') {
+        e.preventDefault();
+        fitToScreen(true);
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        setPosition(p => ({ ...p, x: p.x + 60 }));
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        setPosition(p => ({ ...p, x: p.x - 60 }));
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setPosition(p => ({ ...p, y: p.y + 60 }));
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setPosition(p => ({ ...p, y: p.y - 60 }));
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleZoomIn, handleZoomOut, fitToScreen]);
+
+  // Minimap Navigation Calculations
+  const minimapViewport = useMemo(() => {
+    const cw = containerSize.width;
+    const ch = containerSize.height;
+    const leftCanvas = -position.x / scale;
+    const topCanvas = -position.y / scale;
+    const wCanvas = cw / scale;
+    const hCanvas = ch / scale;
+
+    const miniW = 140;
+    const miniH = 60;
+    const scaleX = miniW / 2100;
+    const scaleY = miniH / 900;
+
+    const left = Math.max(0, Math.min(miniW, leftCanvas * scaleX));
+    const top = Math.max(0, Math.min(miniH, topCanvas * scaleY));
+    const right = Math.max(0, Math.min(miniW, (leftCanvas + wCanvas) * scaleX));
+    const bottom = Math.max(0, Math.min(miniH, (topCanvas + hCanvas) * scaleY));
+
+    return {
+      left,
+      top,
+      width: Math.max(12, right - left),
+      height: Math.max(10, bottom - top),
+    };
+  }, [position, scale, containerSize]);
+
+  const handleMinimapClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const clickY = e.clientY - rect.top;
+    const targetCanvasX = (clickX / 140) * 2100;
+    const targetCanvasY = (clickY / 60) * 900;
+
+    if (!containerRef.current) return;
+    const cw = containerRef.current.clientWidth;
+    const ch = containerRef.current.clientHeight;
+
+    setIsAnimating(true);
+    setTimeout(() => setIsAnimating(false), 260);
+    setPosition({
+      x: cw / 2 - targetCanvasX * scale,
+      y: ch / 2 - targetCanvasY * scale,
+    });
   };
 
   const focusOnNode = (vn: VisualNode) => {
     onSelectNode(vn.flattened);
-    // If clicking a G3 node, toggle expansion of its G4 children
+
+    if (containerRef.current) {
+      const cw = containerRef.current.clientWidth;
+      const ch = containerRef.current.clientHeight;
+      setIsAnimating(true);
+      setTimeout(() => setIsAnimating(false), 260);
+      setPosition({
+        x: cw / 2 - vn.x * scale,
+        y: ch / 2 - vn.y * scale,
+      });
+    }
+
     if (vn.flattened.generation === 3) {
       setExpandedG3Ids(prev => {
         const next = new Set(prev);
@@ -397,7 +775,9 @@ export const ArtisticVisualTree: React.FC<ArtisticVisualTreeProps> = ({
   };
 
   return (
-    <div className={`relative w-full h-[85vh] min-h-[660px] rounded-3xl overflow-hidden border shadow-2xl flex flex-col select-none ${
+    <div 
+      ref={mainWrapperRef}
+      className={`relative w-full h-[78vh] sm:h-[85vh] min-h-[500px] sm:min-h-[640px] rounded-2xl sm:rounded-3xl overflow-hidden border shadow-2xl flex flex-col select-none touch-none ${
       isLight ? 'bg-amber-950/5 border-amber-900/20' : 'bg-slate-950 border-amber-500/25'
     }`}>
       {/* 1. Header Overlay (Top Left Brand) */}
@@ -459,25 +839,43 @@ export const ArtisticVisualTree: React.FC<ArtisticVisualTreeProps> = ({
           )}
 
           <button
-            onClick={() => setScale(prev => Math.min(2.5, prev * 1.15))}
+            onClick={handleZoomIn}
             className="p-1.5 rounded-xl border border-amber-500/20 bg-slate-900/80 hover:bg-amber-500/20 text-amber-300 transition-all active:scale-95"
-            title="አቅርብ (Zoom in)"
+            title="አቅርብ (Zoom In / +)"
           >
             <ZoomIn size={14} />
           </button>
           <button
-            onClick={() => setScale(prev => Math.max(0.45, prev * 0.85))}
+            onClick={() => fitToScreen(true)}
+            className="px-2 py-1 rounded-xl border border-amber-500/20 bg-slate-900/80 hover:bg-amber-500/20 text-amber-300 font-mono text-[10.5px] font-semibold transition-all active:scale-95 cursor-pointer"
+            title="ሙሉውን ለማሳየት ጠቅ ያድርጉ (Fit Screen)"
+          >
+            {Math.round(scale * 100)}%
+          </button>
+          <button
+            onClick={handleZoomOut}
             className="p-1.5 rounded-xl border border-amber-500/20 bg-slate-900/80 hover:bg-amber-500/20 text-amber-300 transition-all active:scale-95"
-            title="አርቅ (Zoom out)"
+            title="አርቅ (Zoom Out / -)"
           >
             <ZoomOut size={14} />
           </button>
           <button
-            onClick={handleResetView}
+            onClick={() => fitToScreen(true)}
             className="p-1.5 rounded-xl border border-amber-500/20 bg-slate-900/80 hover:bg-amber-500/20 text-amber-300 transition-all active:scale-95"
-            title="መሃል አድርግ (Reset View)"
+            title="መላውን ዛፍ አሳይ (Fit to Screen / F)"
           >
-            <RotateCcw size={14} />
+            <Maximize2 size={14} />
+          </button>
+          <button
+            onClick={() => setShowMinimap(prev => !prev)}
+            className={`p-1.5 rounded-xl border transition-all active:scale-95 ${
+              showMinimap
+                ? 'border-amber-400 bg-amber-500 text-slate-950 font-bold shadow-xs'
+                : 'border-amber-500/20 bg-slate-900/80 hover:bg-amber-500/20 text-amber-300'
+            }`}
+            title="ካርታ አሳይ/ደብቅ (Toggle Minimap)"
+          >
+            <Compass size={14} />
           </button>
         </div>
 
@@ -524,19 +922,21 @@ export const ArtisticVisualTree: React.FC<ArtisticVisualTreeProps> = ({
       {/* 3. Main Pan & Zoom Botanical Canvas with High-Res Tree Backdrop (21:9 Ratio) */}
       <div 
         ref={containerRef}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onWheel={handleWheel}
-        className={`w-full h-full cursor-grab active:cursor-grabbing overflow-hidden relative ${
-          isDragging ? 'cursor-grabbing' : ''
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+        onDoubleClick={handleDoubleClick}
+        className={`w-full h-full cursor-grab active:cursor-grabbing overflow-hidden relative touch-none select-none ${
+          isInteracting ? 'cursor-grabbing' : ''
         }`}
       >
         <div
           style={{
             transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
-            transformOrigin: 'center center',
-            transition: isDragging ? 'none' : 'transform 0.12s ease-out',
+            transformOrigin: '0 0',
+            transition: isAnimating ? 'transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1)' : 'none',
+            willChange: 'transform',
           }}
           className="w-[2100px] h-[900px] relative pointer-events-auto"
         >
@@ -589,7 +989,9 @@ export const ArtisticVisualTree: React.FC<ArtisticVisualTreeProps> = ({
                   key={vn.flattened.id}
                   onClick={(e) => {
                     e.stopPropagation();
-                    focusOnNode(vn);
+                    if (!hasMovedRef.current) {
+                      focusOnNode(vn);
+                    }
                   }}
                   onMouseEnter={() => setHoveredNodeId(vn.flattened.id)}
                   onMouseLeave={() => setHoveredNodeId(null)}
@@ -926,6 +1328,42 @@ export const ArtisticVisualTree: React.FC<ArtisticVisualTreeProps> = ({
           </div>
         </div>
       </div>
+
+      {/* 5. Floating Minimap Navigator */}
+      {showMinimap && (
+        <div className="absolute bottom-20 right-4 z-30 bg-slate-950/90 backdrop-blur-md p-2 rounded-2xl border border-amber-500/40 shadow-2xl flex flex-col gap-1.5 pointer-events-auto select-none no-pan">
+          <div className="flex items-center justify-between text-[10px] text-amber-300 font-serif px-0.5">
+            <span className="font-bold flex items-center gap-1">
+              <Compass size={11} className="text-amber-400" />
+              <span>ካርታ (Navigator)</span>
+            </span>
+            <span className="font-mono text-amber-400/80">{Math.round(scale * 100)}%</span>
+          </div>
+          <div 
+            onClick={handleMinimapClick}
+            className="relative w-[140px] h-[60px] rounded-xl overflow-hidden border border-amber-500/30 cursor-crosshair bg-stone-900 group"
+          >
+            <img 
+              src={TREE_BACKGROUND_IMAGE} 
+              alt="Tree Thumbnail" 
+              className="w-full h-full object-cover opacity-60 pointer-events-none select-none"
+            />
+            {/* Viewport Frame */}
+            <div 
+              style={{
+                left: `${minimapViewport.left}px`,
+                top: `${minimapViewport.top}px`,
+                width: `${minimapViewport.width}px`,
+                height: `${minimapViewport.height}px`,
+              }}
+              className="absolute border-2 border-amber-400 bg-amber-400/25 rounded-xs shadow-[0_0_8px_rgba(251,191,36,0.6)] pointer-events-none transition-all duration-75"
+            />
+          </div>
+          <div className="text-[9px] text-amber-200/60 text-center font-sans">
+            ጠቅ አድርግ ወደዚያ ቦታ ለመሄድ
+          </div>
+        </div>
+      )}
     </div>
   );
 };
