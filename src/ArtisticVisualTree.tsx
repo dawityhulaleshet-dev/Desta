@@ -1,4 +1,5 @@
 import React, { useState, useRef, useMemo, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { FamilyNode } from './destaFamilyData';
 import { FlattenedNode, getCleanName, TreeStats } from './familyUtils';
 import { 
@@ -15,7 +16,9 @@ import {
   X,
   Maximize2,
   Minimize2,
-  Move
+  Move,
+  ChevronDown,
+  Check
 } from 'lucide-react';
 
 interface ArtisticVisualTreeProps {
@@ -26,6 +29,8 @@ interface ArtisticVisualTreeProps {
   stats: TreeStats;
   theme?: 'dark' | 'light';
   onOpenPdfModal?: () => void;
+  searchQuery?: string;
+  onSearchQueryChange?: (query: string) => void;
 }
 
 interface VisualNode {
@@ -241,6 +246,8 @@ export const ArtisticVisualTree: React.FC<ArtisticVisualTreeProps> = ({
   stats,
   theme = 'dark',
   onOpenPdfModal,
+  searchQuery: externalSearchQuery,
+  onSearchQueryChange,
 }) => {
   const isLight = theme === 'light';
 
@@ -251,11 +258,20 @@ export const ArtisticVisualTree: React.FC<ArtisticVisualTreeProps> = ({
   const [isAnimating, setIsAnimating] = useState(false);
   const [showMinimap, setShowMinimap] = useState(false);
   const [containerSize, setContainerSize] = useState<{ width: number; height: number }>({ width: 1200, height: 700 });
+  const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
+
+  useEffect(() => {
+    const el = document.getElementById('header-right-controls');
+    if (el) setPortalTarget(el);
+  }, []);
 
   // Interactive filters
   const [selectedBranch, setSelectedBranch] = useState<number | null>(null);
+  const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState<boolean>(false);
   const [activeGeneration, setActiveGeneration] = useState<number>(0);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [internalSearchQuery, setInternalSearchQuery] = useState('');
+  const searchQuery = externalSearchQuery !== undefined ? externalSearchQuery : internalSearchQuery;
+  const setSearchQuery = onSearchQueryChange || setInternalSearchQuery;
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
 
   // G4 is omitted/hidden by default until a G3 node is clicked
@@ -750,17 +766,7 @@ export const ArtisticVisualTree: React.FC<ArtisticVisualTreeProps> = ({
   const focusOnNode = (vn: VisualNode) => {
     onSelectNode(vn.flattened);
 
-    if (containerRef.current) {
-      const cw = containerRef.current.clientWidth;
-      const ch = containerRef.current.clientHeight;
-      setIsAnimating(true);
-      setTimeout(() => setIsAnimating(false), 260);
-      setPosition({
-        x: cw / 2 - vn.x * scale,
-        y: ch / 2 - vn.y * scale,
-      });
-    }
-
+    // Canvas stays stationary in place without jumping or sliding left/right
     if (vn.flattened.generation === 3) {
       setExpandedG3Ids(prev => {
         const next = new Set(prev);
@@ -774,113 +780,212 @@ export const ArtisticVisualTree: React.FC<ArtisticVisualTreeProps> = ({
     }
   };
 
+  const controlsBar = (
+    <div className={`p-1 rounded-xl border shadow-xs flex items-center gap-1.5 transition-colors ${
+      isLight 
+        ? 'bg-slate-200/60 border-slate-300/80 text-slate-800' 
+        : 'bg-slate-900 border-slate-800 text-amber-200'
+    }`}>
+      {/* Search Input (Only in fallback mode when not in main header) */}
+      {!portalTarget && (
+        <div className="relative">
+          <Search size={13} className={`absolute left-2.5 top-1/2 -translate-y-1/2 ${isLight ? 'text-slate-400' : 'text-amber-400/70'}`} />
+          <input
+            type="text"
+            placeholder="አባል ፈልግ (Search)..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            className={`pl-7 pr-6 py-1 rounded-lg text-xs w-28 sm:w-36 focus:outline-none transition-all ${
+              isLight
+                ? 'bg-white border border-slate-200 text-slate-900 focus:border-amber-500'
+                : 'bg-slate-950 border border-amber-500/20 text-amber-100 focus:border-amber-400'
+            }`}
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-amber-400/60 hover:text-amber-300"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+      )}
+
+      <button
+        onClick={handleZoomIn}
+        className={`p-1.5 rounded-lg border transition-all active:scale-95 ${
+          isLight
+            ? 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
+            : 'border-amber-500/20 bg-slate-950/80 hover:bg-amber-500/20 text-amber-300'
+        }`}
+        title="አቅርብ (Zoom In / +)"
+      >
+        <ZoomIn size={13} />
+      </button>
+
+      <button
+        onClick={() => fitToScreen(true)}
+        className={`px-1.5 py-0.5 rounded-lg border font-mono text-[10.5px] font-semibold transition-all active:scale-95 cursor-pointer ${
+          isLight
+            ? 'border-slate-200 bg-white text-slate-700'
+            : 'border-amber-500/20 bg-slate-950/80 text-amber-300'
+        }`}
+        title="ሙሉውን ለማሳየት ጠቅ ያድርጉ (Fit Screen)"
+      >
+        {Math.round(scale * 100)}%
+      </button>
+
+      <button
+        onClick={handleZoomOut}
+        className={`p-1.5 rounded-lg border transition-all active:scale-95 ${
+          isLight
+            ? 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
+            : 'border-amber-500/20 bg-slate-950/80 hover:bg-amber-500/20 text-amber-300'
+        }`}
+        title="አርቅ (Zoom Out / -)"
+      >
+        <ZoomOut size={13} />
+      </button>
+
+      <button
+        onClick={() => fitToScreen(true)}
+        className={`p-1.5 rounded-lg border transition-all active:scale-95 ${
+          isLight
+            ? 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
+            : 'border-amber-500/20 bg-slate-950/80 hover:bg-amber-500/20 text-amber-300'
+        }`}
+        title="መላውን ዛፍ አሳይ (Fit to Screen / F)"
+      >
+        <Maximize2 size={13} />
+      </button>
+
+      <button
+        onClick={() => setShowMinimap(prev => !prev)}
+        className={`p-1.5 rounded-lg border transition-all active:scale-95 ${
+          showMinimap
+            ? 'border-amber-400 bg-amber-500 text-slate-950 font-bold shadow-xs'
+            : isLight
+              ? 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
+              : 'border-amber-500/20 bg-slate-950/80 hover:bg-amber-500/20 text-amber-300'
+        }`}
+        title="ካርታ አሳይ/ደብቅ (Toggle Minimap)"
+      >
+        <Compass size={13} />
+      </button>
+    </div>
+  );
+
   return (
     <div 
       ref={mainWrapperRef}
       className={`relative w-full h-[78vh] sm:h-[85vh] min-h-[500px] sm:min-h-[640px] rounded-2xl sm:rounded-3xl overflow-hidden border shadow-2xl flex flex-col select-none touch-none ${
       isLight ? 'bg-amber-950/5 border-amber-900/20' : 'bg-slate-950 border-amber-500/25'
     }`}>
-      {/* 1. Header Overlay (Top Left Brand) */}
-      <div className="absolute top-4 left-4 z-20 pointer-events-none flex flex-col gap-1 max-w-sm sm:max-w-md">
-        <div className="bg-slate-950/85 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-amber-500/35 shadow-xl pointer-events-auto">
-          <div className="flex items-center gap-2">
-            <span className="p-1 rounded-lg bg-amber-500/20 text-amber-400">
-              <Sparkles size={16} />
-            </span>
-            <h1 className="text-base sm:text-lg font-black tracking-tight text-amber-300 font-serif">
-              የደስታ ቤተሰብ (Desta Family)
-            </h1>
-          </div>
-          <p className="text-[11px] text-amber-200/80 font-serif tracking-widest mt-0.5 uppercase">
-            21:9 Widescreen Ancestral Canvas
-          </p>
-          <div className="flex items-center gap-2 text-[10px] text-amber-300/70 mt-1">
-            <span>{stats.totalMembers} አባላት</span>
-            <span>·</span>
-            <span>፯ ዋና ቅርንጫፎች</span>
-            <span>·</span>
-            <span>{stats.maxGenerations} ትውልዶች</span>
-          </div>
+      {/* 0. Header Right Portal */}
+      {portalTarget && createPortal(controlsBar, portalTarget)}
+
+      {/* 1. Header Overlay (Top Left Brand - Horizontal) */}
+      <div className="absolute top-4 left-4 z-20 pointer-events-none">
+        <div className="bg-slate-950/85 backdrop-blur-md px-3.5 py-1.5 rounded-xl border border-amber-500/35 shadow-xl pointer-events-auto flex items-center gap-2">
+          <span className="p-1 rounded-lg bg-amber-500/20 text-amber-400">
+            <Sparkles size={14} />
+          </span>
+          <h1 className="text-xs sm:text-sm font-black tracking-tight text-amber-300 font-serif whitespace-nowrap">
+            የደስታ ቤተሰብ (Desta Family)
+          </h1>
+          <span className="text-[10px] text-amber-400/50">·</span>
+          <span className="text-[10px] text-amber-200/80 font-serif whitespace-nowrap">
+            {stats.totalMembers} አባላት · ፯ ቅርንጫፎች · {stats.maxGenerations} ትውልዶች
+          </span>
         </div>
       </div>
 
       {/* 2. Top Right Interactive Controls Palette */}
       <div className="absolute top-4 right-4 z-20 flex flex-col items-end gap-2 max-w-md">
-        {/* Search, Layer Toggle & Tool Buttons */}
-        <div className="bg-slate-950/85 backdrop-blur-md p-1.5 rounded-2xl border border-amber-500/30 shadow-xl flex items-center gap-1.5">
-          <div className="relative">
-            <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-amber-400/70" />
-            <input
-              type="text"
-              placeholder="አባል ፈልግ (Search)..."
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              className="pl-7 pr-6 py-1.5 rounded-xl bg-slate-900/90 border border-amber-500/20 text-amber-100 text-xs w-36 sm:w-44 focus:outline-none focus:border-amber-400"
+        {!portalTarget && controlsBar}
+
+        {/* Mobile Branch Filter Dropdown (sm:hidden) */}
+        <div className="sm:hidden relative">
+          <button
+            type="button"
+            onClick={() => setIsBranchDropdownOpen(prev => !prev)}
+            className="bg-slate-950/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-amber-500/40 text-amber-200 text-xs font-semibold flex items-center gap-2 shadow-lg active:scale-95 transition-all"
+            title="ቅርንጫፍ ምረጥ (Select Branch)"
+          >
+            <span 
+              className="w-2.5 h-2.5 rounded-full shrink-0" 
+              style={{ backgroundColor: selectedBranch !== null ? BRANCH_PALETTES[selectedBranch].main : '#f59e0b' }} 
             />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-amber-400/60 hover:text-amber-300"
-              >
-                ✕
-              </button>
-            )}
-          </div>
+            <span className="truncate max-w-[140px] font-medium">
+              {selectedBranch === null 
+                ? 'ቅርንጫፎች (ሁሉም)' 
+                : `${GEEZ_NUMS[selectedBranch]}. ${BRANCH_PALETTES[selectedBranch].name}`}
+            </span>
+            <ChevronDown 
+              size={13} 
+              className={`text-amber-400 transition-transform duration-200 shrink-0 ${isBranchDropdownOpen ? 'rotate-180' : ''}`} 
+            />
+          </button>
 
-          {onOpenPdfModal && (
-            <button
-              onClick={onOpenPdfModal}
-              className="px-2.5 py-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 text-xs font-semibold flex items-center gap-1 transition-all active:scale-95"
-              title="ሥዕሉን ወይም ሪፖርቱን አትም (Print/Export Artwork)"
-            >
-              <Printer size={13} />
-              <span className="hidden sm:inline">አትም</span>
-            </button>
+          {isBranchDropdownOpen && (
+            <>
+              {/* Backdrop dismiss */}
+              <div 
+                className="fixed inset-0 z-30" 
+                onClick={() => setIsBranchDropdownOpen(false)} 
+              />
+              
+              <div className="absolute right-0 top-full mt-1.5 w-60 bg-slate-950/95 backdrop-blur-md border border-amber-500/40 rounded-xl shadow-2xl p-1.5 z-40 flex flex-col gap-1 max-h-72 overflow-y-auto animate-in fade-in zoom-in-95">
+                <button
+                  type="button"
+                  onClick={() => { setSelectedBranch(null); setIsBranchDropdownOpen(false); }}
+                  className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold text-left transition-colors flex items-center justify-between ${
+                    selectedBranch === null 
+                      ? 'bg-amber-500 text-slate-950 font-bold shadow-xs' 
+                      : 'text-amber-100 hover:bg-slate-800'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-amber-400 shrink-0" />
+                    <span>ሁሉም ቅርንጫፎች (All)</span>
+                  </div>
+                  {selectedBranch === null && <Check size={13} />}
+                </button>
+
+                <div className="h-px bg-amber-500/20 my-0.5" />
+
+                {BRANCH_PALETTES.map((bp, idx) => {
+                  const isSelected = selectedBranch === idx;
+                  const num = idx + 1;
+                  const geez = GEEZ_NUMS[idx] || `${num}`;
+                  return (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => { setSelectedBranch(idx); setIsBranchDropdownOpen(false); }}
+                      className={`px-2.5 py-1.5 rounded-lg text-xs font-medium text-left transition-colors flex items-center justify-between gap-2 ${
+                        isSelected 
+                          ? 'bg-white/15 text-white font-bold border border-amber-400/50' 
+                          : 'text-amber-100/90 hover:bg-slate-800/80'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 truncate">
+                        <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: bp.main }} />
+                        <span className="font-mono text-[11px] text-amber-300 font-bold shrink-0">[{num}] {geez}.</span>
+                        <span className="truncate">{bp.name}</span>
+                      </div>
+                      {isSelected && <Check size={13} className="text-amber-400 shrink-0" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </>
           )}
-
-          <button
-            onClick={handleZoomIn}
-            className="p-1.5 rounded-xl border border-amber-500/20 bg-slate-900/80 hover:bg-amber-500/20 text-amber-300 transition-all active:scale-95"
-            title="አቅርብ (Zoom In / +)"
-          >
-            <ZoomIn size={14} />
-          </button>
-          <button
-            onClick={() => fitToScreen(true)}
-            className="px-2 py-1 rounded-xl border border-amber-500/20 bg-slate-900/80 hover:bg-amber-500/20 text-amber-300 font-mono text-[10.5px] font-semibold transition-all active:scale-95 cursor-pointer"
-            title="ሙሉውን ለማሳየት ጠቅ ያድርጉ (Fit Screen)"
-          >
-            {Math.round(scale * 100)}%
-          </button>
-          <button
-            onClick={handleZoomOut}
-            className="p-1.5 rounded-xl border border-amber-500/20 bg-slate-900/80 hover:bg-amber-500/20 text-amber-300 transition-all active:scale-95"
-            title="አርቅ (Zoom Out / -)"
-          >
-            <ZoomOut size={14} />
-          </button>
-          <button
-            onClick={() => fitToScreen(true)}
-            className="p-1.5 rounded-xl border border-amber-500/20 bg-slate-900/80 hover:bg-amber-500/20 text-amber-300 transition-all active:scale-95"
-            title="መላውን ዛፍ አሳይ (Fit to Screen / F)"
-          >
-            <Maximize2 size={14} />
-          </button>
-          <button
-            onClick={() => setShowMinimap(prev => !prev)}
-            className={`p-1.5 rounded-xl border transition-all active:scale-95 ${
-              showMinimap
-                ? 'border-amber-400 bg-amber-500 text-slate-950 font-bold shadow-xs'
-                : 'border-amber-500/20 bg-slate-900/80 hover:bg-amber-500/20 text-amber-300'
-            }`}
-            title="ካርታ አሳይ/ደብቅ (Toggle Minimap)"
-          >
-            <Compass size={14} />
-          </button>
         </div>
 
-        {/* 7 Branch Quick Filter Pills (1 to 7) */}
-        <div className="bg-slate-950/85 backdrop-blur-md p-1 rounded-xl border border-amber-500/20 shadow-lg flex items-center gap-1 flex-wrap justify-end">
+        {/* Desktop 7 Branch Quick Filter Pills (hidden sm:flex) */}
+        <div className="hidden sm:flex bg-slate-950/85 backdrop-blur-md p-1 rounded-xl border border-amber-500/20 shadow-lg items-center gap-1 flex-wrap justify-end">
           <button
             onClick={() => setSelectedBranch(null)}
             className={`px-2 py-0.5 rounded-lg text-[10px] font-semibold transition-all ${
@@ -1161,19 +1266,29 @@ export const ArtisticVisualTree: React.FC<ArtisticVisualTreeProps> = ({
             })}
           </div>
 
-          {/* C. Antique Callout Card (When Member is Selected) */}
-          {selectedVisualNode && (
-            <div 
-              style={{
-                left: `${
-                  selectedVisualNode.x > 1150
-                    ? Math.max(30, selectedVisualNode.x - 340)
-                    : Math.min(1760, selectedVisualNode.x + 45)
-                }px`,
-                top: `${Math.min(640, Math.max(50, selectedVisualNode.y - 70))}px`,
-              }}
-              className="absolute z-40 w-72 sm:w-80 bg-stone-900/95 backdrop-blur-md rounded-2xl border-2 border-amber-500/60 p-4 shadow-2xl text-amber-100 flex flex-col gap-2.5 font-serif no-pan pointer-events-auto"
-            >
+          {/* C. Antique Callout Card (When Member is Selected) - Context-Aware Placement */}
+          {selectedVisualNode && (() => {
+            const cardWidth = 320;
+            const gap = 20;
+            const isOnRightSide = selectedVisualNode.x >= 1050;
+
+            // If node is on the right side of the canvas (x >= 1050), pop-up appears to its left.
+            // If node is on the left side of the canvas (x < 1050), pop-up appears to its right.
+            const cardLeft = isOnRightSide
+              ? Math.max(24, selectedVisualNode.x - selectedVisualNode.r - cardWidth - gap)
+              : Math.min(2100 - cardWidth - 24, selectedVisualNode.x + selectedVisualNode.r + gap);
+
+            // Vertically align near the node while preventing clipping at top (25px) or bottom (540px)
+            const cardTop = Math.min(540, Math.max(25, selectedVisualNode.y - 95));
+
+            return (
+              <div 
+                style={{
+                  left: `${cardLeft}px`,
+                  top: `${cardTop}px`,
+                }}
+                className="absolute z-40 w-72 sm:w-80 bg-stone-900/95 backdrop-blur-md rounded-2xl border-2 border-amber-500/60 p-4 shadow-[0_12px_40px_rgba(0,0,0,0.85)] text-amber-100 flex flex-col gap-2.5 font-serif no-pan pointer-events-auto transition-all duration-200 animate-in fade-in zoom-in-95"
+              >
               {/* Header with Close */}
               <div className="flex items-start justify-between border-b border-amber-500/30 pb-2">
                 <div className="flex items-center gap-2.5">
@@ -1283,7 +1398,8 @@ export const ArtisticVisualTree: React.FC<ArtisticVisualTreeProps> = ({
                 )}
               </div>
             </div>
-          )}
+          );
+        })()}
         </div>
       </div>
 

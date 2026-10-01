@@ -338,24 +338,110 @@ export default function App() {
         : 'bg-slate-950 text-slate-100 selection:bg-amber-500 selection:text-slate-950'
     }`}>
       {/* Top Navbar */}
-      <header className={`border-b sticky top-0 z-40 px-4 sm:px-6 py-2.5 w-full transition-colors ${
+      {/* Top Navbar */}
+      <header className={`border-b sticky top-0 z-40 px-3 sm:px-6 py-2.5 w-full transition-colors ${
         isLight ? 'border-slate-200 bg-white/95 backdrop-blur shadow-xs' : 'border-slate-850 bg-slate-950/90 backdrop-blur'
       }`}>
-        <div className="w-full flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2.5">
+        <div className="w-full flex flex-row items-center justify-between gap-3 overflow-x-auto">
+          <div className="flex items-center gap-2.5 shrink-0">
             <h1 className={`text-base sm:text-lg font-bold tracking-tight ${
               isLight ? 'text-slate-900' : 'text-white'
             }`}>
-              የደስታ የቤተሰብ ዛፍ
+              የደስታ የቤተሰብ
             </h1>
-            <span className={`text-xs hidden sm:inline ${
-              isLight ? 'text-slate-400' : 'text-slate-500'
-            }`}>
-              · ፯ ቅርንጫፎች · {stats.totalMembers} አባላት
-            </span>
           </div>
 
-          <div className="flex items-center gap-2">
+          {/* Navigation Tabs in Main Header */}
+          <nav className={`flex items-center p-1 rounded-xl border gap-1 transition-colors overflow-x-auto max-w-full ${
+            isLight ? 'bg-slate-200/60 border-slate-300/70' : 'bg-slate-900 border-slate-800'
+          }`}>
+            <button
+              onClick={() => setActiveTab('visual')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 active:scale-[0.98] flex items-center gap-1.5 whitespace-nowrap ${
+                activeTab === 'visual'
+                  ? isLight ? 'bg-amber-500 text-slate-950 shadow-xs font-bold' : 'bg-amber-400 text-slate-950 shadow-xs font-bold'
+                  : isLight ? 'text-amber-900 hover:text-amber-950 hover:bg-amber-100/60 font-medium' : 'text-amber-300 hover:text-white hover:bg-amber-500/10'
+              }`}
+            >
+              <Sparkles size={13} className={activeTab === 'visual' ? 'text-slate-950' : 'text-amber-500'} />
+              <span>ሥዕላዊ ዛፍ (Artistic Tree)</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('topdown')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 active:scale-[0.98] flex items-center gap-1.5 whitespace-nowrap ${
+                activeTab === 'topdown'
+                  ? isLight ? 'bg-white text-slate-950 shadow-xs font-bold' : 'bg-slate-800 text-white shadow-xs font-bold'
+                  : isLight ? 'text-slate-600 hover:text-slate-950 hover:bg-white/50' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+              }`}
+            >
+              <Network size={13} className={activeTab === 'topdown' ? (isLight ? 'text-sky-600' : 'text-sky-400') : ''} />
+              <span>ዛፍ (Tree)</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('tree')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 active:scale-[0.98] flex items-center gap-1.5 whitespace-nowrap ${
+                activeTab === 'tree'
+                  ? isLight ? 'bg-white text-slate-950 shadow-xs font-bold' : 'bg-slate-800 text-white shadow-xs font-bold'
+                  : isLight ? 'text-slate-600 hover:text-slate-950 hover:bg-white/50' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+              }`}
+            >
+              <ListTree size={13} className={activeTab === 'tree' ? (isLight ? 'text-sky-600' : 'text-sky-400') : ''} />
+              <span>ዝርዝር (List)</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('branches')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 active:scale-[0.98] flex items-center gap-1.5 whitespace-nowrap ${
+                activeTab === 'branches'
+                  ? isLight ? 'bg-white text-slate-950 shadow-xs font-bold' : 'bg-slate-800 text-white shadow-xs font-bold'
+                  : isLight ? 'text-slate-600 hover:text-slate-950 hover:bg-white/50' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+              }`}
+            >
+              <Layers size={13} className={activeTab === 'branches' ? (isLight ? 'text-sky-600' : 'text-sky-400') : ''} />
+              <span>ቅርንጫፎች (Branches)</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('dashboard')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 active:scale-[0.98] flex items-center gap-1.5 whitespace-nowrap ${
+                activeTab === 'dashboard'
+                  ? isLight ? 'bg-white text-slate-950 shadow-xs font-bold' : 'bg-slate-800 text-white shadow-xs font-bold'
+                  : isLight ? 'text-slate-600 hover:text-slate-950 hover:bg-white/50' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+              }`}
+            >
+              <LayoutDashboard size={13} className={activeTab === 'dashboard' ? (isLight ? 'text-sky-600' : 'text-sky-400') : ''} />
+              <span>ማጠቃለያ (Summary)</span>
+            </button>
+          </nav>
+
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Search Input in Header */}
+            <div className="relative">
+              <Search size={13} className={`absolute left-3 top-1/2 -translate-y-1/2 ${isLight ? 'text-slate-400' : 'text-slate-500'}`} />
+              <input
+                type="text"
+                placeholder="ፈልግ (Search)..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className={`pl-8 pr-7 py-1.5 rounded-xl border text-xs focus:outline-none w-36 sm:w-48 transition-all duration-150 ${
+                  isLight 
+                    ? 'bg-slate-50 hover:bg-white focus:bg-white border-slate-200 text-slate-900 focus:border-amber-500 shadow-2xs' 
+                    : 'bg-slate-900 hover:bg-slate-850 focus:bg-slate-850 border-slate-800 text-white focus:border-amber-400'
+                }`}
+              />
+              {searchQuery && (
+                <button 
+                  onClick={() => setSearchQuery('')}
+                  className={`absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded-full text-xs transition-opacity hover:opacity-100 ${
+                    isLight ? 'text-slate-400 hover:bg-slate-100' : 'text-slate-500 hover:bg-slate-800'
+                  }`}
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
+            {/* Slot for Artistic Tree Zoom & Search Controls Portal */}
+            <div id="header-right-controls" className="flex items-center gap-1.5" />
+
             <button
               onClick={() => setIsPdfModalOpen(true)}
               className={`px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-2 transition-all duration-150 active:scale-95 shadow-2xs ${
@@ -366,21 +452,8 @@ export default function App() {
               title="PDF አውርድ (Download PDF Report)"
             >
               <FileDown size={14} className={isLight ? 'text-amber-400' : 'text-sky-600'} />
-              <span>PDF አውርድ</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('dashboard')}
-              className={`px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-all duration-150 active:scale-95 ${
-                activeTab === 'dashboard'
-                  ? isLight ? 'bg-sky-600 text-white border-sky-600 shadow-xs' : 'bg-sky-500 text-slate-950 border-sky-500 shadow-xs'
-                  : isLight ? 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700 shadow-2xs' : 'bg-slate-900 hover:bg-slate-800 border-slate-800 text-slate-300'
-              }`}
-              title="Summary Dashboard"
-            >
-              <LayoutDashboard size={13} />
-              <span className="hidden sm:inline">Summary Dashboard</span>
-              <span className="sm:hidden">Dashboard</span>
+              <span className="hidden sm:inline">PDF አውርድ</span>
+              <span className="sm:hidden">PDF</span>
             </button>
 
             <button
@@ -412,135 +485,6 @@ export default function App() {
 
       {/* Main Body */}
       <main className="flex-1 w-full px-3 sm:px-6 py-3 flex flex-col gap-3">
-        {/* Navigation & Search Strip */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-          <nav className={`flex items-center p-1 rounded-xl border self-start gap-1 transition-colors ${
-            isLight ? 'bg-slate-200/60 border-slate-300/70' : 'bg-slate-900 border-slate-800'
-          }`}>
-            <button
-              onClick={() => setActiveTab('visual')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 active:scale-[0.98] flex items-center gap-1.5 ${
-                activeTab === 'visual'
-                  ? isLight ? 'bg-amber-500 text-slate-950 shadow-xs font-bold' : 'bg-amber-400 text-slate-950 shadow-xs font-bold'
-                  : isLight ? 'text-amber-900 hover:text-amber-950 hover:bg-amber-100/60 font-medium' : 'text-amber-300 hover:text-white hover:bg-amber-500/10'
-              }`}
-            >
-              <Sparkles size={13} className={activeTab === 'visual' ? 'text-slate-950' : 'text-amber-500'} />
-              <span>ሥዕላዊ ዛፍ (Artistic Tree)</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('topdown')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 active:scale-[0.98] flex items-center gap-1.5 ${
-                activeTab === 'topdown'
-                  ? isLight ? 'bg-white text-slate-950 shadow-xs' : 'bg-slate-800 text-white shadow-xs'
-                  : isLight ? 'text-slate-600 hover:text-slate-950 hover:bg-white/50' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
-              }`}
-            >
-              <Network size={13} className={activeTab === 'topdown' ? (isLight ? 'text-sky-600' : 'text-sky-400') : ''} />
-              <span>ዛፍ (Tree)</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('tree')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 active:scale-[0.98] flex items-center gap-1.5 ${
-                activeTab === 'tree'
-                  ? isLight ? 'bg-white text-slate-950 shadow-xs' : 'bg-slate-800 text-white shadow-xs'
-                  : isLight ? 'text-slate-600 hover:text-slate-950 hover:bg-white/50' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
-              }`}
-            >
-              <ListTree size={13} className={activeTab === 'tree' ? (isLight ? 'text-sky-600' : 'text-sky-400') : ''} />
-              <span>ዝርዝር (List)</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('branches')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 active:scale-[0.98] flex items-center gap-1.5 ${
-                activeTab === 'branches'
-                  ? isLight ? 'bg-white text-slate-950 shadow-xs' : 'bg-slate-800 text-white shadow-xs'
-                  : isLight ? 'text-slate-600 hover:text-slate-950 hover:bg-white/50' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
-              }`}
-            >
-              <Layers size={13} className={activeTab === 'branches' ? (isLight ? 'text-sky-600' : 'text-sky-400') : ''} />
-              <span>ቅርንጫፎች (Branches)</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('dashboard')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 active:scale-[0.98] flex items-center gap-1.5 ${
-                activeTab === 'dashboard'
-                  ? isLight ? 'bg-white text-slate-950 shadow-xs' : 'bg-slate-800 text-white shadow-xs'
-                  : isLight ? 'text-slate-600 hover:text-slate-950 hover:bg-white/50' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
-              }`}
-            >
-              <LayoutDashboard size={13} className={activeTab === 'dashboard' ? (isLight ? 'text-sky-600' : 'text-sky-400') : ''} />
-              <span>ማጠቃለያ (Summary)</span>
-            </button>
-          </nav>
-
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <Search size={13} className={`absolute left-3 top-1/2 -translate-y-1/2 ${isLight ? 'text-slate-400' : 'text-slate-500'}`} />
-              <input
-                type="text"
-                placeholder="ፈልግ..."
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                className={`pl-8 pr-7 py-1.5 rounded-xl border text-xs focus:outline-none w-44 sm:w-60 transition-all duration-150 ${
-                  isLight 
-                    ? 'bg-white border-slate-200 text-slate-900 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/15 shadow-2xs' 
-                    : 'bg-slate-900 border-slate-800 text-white focus:border-sky-400 focus:ring-2 focus:ring-sky-400/15'
-                }`}
-              />
-              {searchQuery && (
-                <button 
-                  onClick={() => setSearchQuery('')}
-                  className={`absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 rounded-full text-xs transition-opacity hover:opacity-100 ${
-                    isLight ? 'text-slate-400 hover:bg-slate-100' : 'text-slate-500 hover:bg-slate-800'
-                  }`}
-                >
-                  ✕
-                </button>
-              )}
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setFilterUncertainOnly(!filterUncertainOnly)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold border flex items-center gap-1.5 transition-all duration-150 active:scale-95 shadow-2xs ${
-                filterUncertainOnly 
-                  ? (isLight ? 'bg-amber-500 text-slate-950 border-amber-600 shadow-amber-500/20' : 'bg-amber-400 text-slate-950 border-amber-400') 
-                  : (isLight ? 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700' : 'bg-slate-900 hover:bg-slate-850 border-slate-800 text-slate-300')
-              }`}
-              title="በከፊል የደበዘዙ ስሞችን ብቻ አሳይ (Filter uncertain names)"
-            >
-              <span className={`w-1.5 h-1.5 rounded-full ${filterUncertainOnly ? 'bg-slate-950' : 'bg-amber-500'}`} />
-              <span>የደበዘዙ [?]</span>
-            </button>
-
-            {activeTab === 'tree' && (
-              <div className={`flex items-center p-0.5 rounded-xl border ${
-                isLight ? 'bg-slate-100 border-slate-200' : 'bg-slate-900 border-slate-800'
-              }`}>
-                <button
-                  onClick={expandAll}
-                  className={`p-1.5 rounded-lg transition-all duration-150 active:scale-95 ${
-                    isLight ? 'text-slate-700 hover:bg-white' : 'text-slate-300 hover:bg-slate-800'
-                  }`}
-                  title="ሁሉንም ዘርጋ"
-                >
-                  <Maximize2 size={13} />
-                </button>
-                <button
-                  onClick={collapseAll}
-                  className={`p-1.5 rounded-lg transition-all duration-150 active:scale-95 ${
-                    isLight ? 'text-slate-700 hover:bg-white' : 'text-slate-300 hover:bg-slate-800'
-                  }`}
-                  title="ሁሉንም እጠፍ"
-                >
-                  <Minimize2 size={13} />
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-
         {/* Tab -1: Artistic Visual Tree (Botanical Oil Painting View) */}
         {activeTab === 'visual' && (
           <div className="w-full flex flex-col gap-3">
@@ -552,6 +496,8 @@ export default function App() {
               stats={stats}
               theme={theme}
               onOpenPdfModal={() => setIsPdfModalOpen(true)}
+              searchQuery={searchQuery}
+              onSearchQueryChange={setSearchQuery}
             />
           </div>
         )}
@@ -657,6 +603,31 @@ export default function App() {
             <div className={`border rounded-xl p-5 overflow-x-auto shadow-xs transition-colors ${
               isLight ? 'bg-white border-slate-200' : 'bg-slate-900/60 border-slate-800'
             }`}>
+              <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-200 dark:border-slate-800">
+                <span className="text-xs font-semibold opacity-70">የዝርዝር ዛፍ ተዋረድ (Tree Hierarchy)</span>
+                <div className={`flex items-center p-0.5 rounded-xl border ${
+                  isLight ? 'bg-slate-100 border-slate-200' : 'bg-slate-900 border-slate-800'
+                }`}>
+                  <button
+                    onClick={expandAll}
+                    className={`p-1.5 rounded-lg transition-all duration-150 active:scale-95 ${
+                      isLight ? 'text-slate-700 hover:bg-white' : 'text-slate-300 hover:bg-slate-800'
+                    }`}
+                    title="ሁሉንም ዘርጋ"
+                  >
+                    <Maximize2 size={13} />
+                  </button>
+                  <button
+                    onClick={collapseAll}
+                    className={`p-1.5 rounded-lg transition-all duration-150 active:scale-95 ${
+                      isLight ? 'text-slate-700 hover:bg-white' : 'text-slate-300 hover:bg-slate-800'
+                    }`}
+                    title="ሁሉንም እጠፍ"
+                  >
+                    <Minimize2 size={13} />
+                  </button>
+                </div>
+              </div>
               <div className="min-w-[450px]">
                 <TreeNode 
                   node={treeData} 
