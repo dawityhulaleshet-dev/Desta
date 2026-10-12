@@ -3,6 +3,7 @@ import { FamilyNode } from './destaFamilyData';
 import { FlattenedNode, TreeStats } from './familyUtils';
 import { PdfPrintDocument } from './PdfPrintDocument';
 import { downloadElementAsPdf } from './pdfGenerator';
+import { generateRadialTreeSvg } from './RadialTreeSvgExport';
 import { 
   FileDown, 
   Printer, 
@@ -12,7 +13,9 @@ import {
   Layers, 
   GitFork, 
   FileText,
-  Sparkles
+  Sparkles,
+  Compass,
+  Download
 } from 'lucide-react';
 
 interface PdfExportModalProps {
@@ -33,36 +36,62 @@ export const PdfExportModal: React.FC<PdfExportModalProps> = ({
   theme = 'dark',
 }) => {
   const isLight = theme === 'light';
-  const [exportType, setExportType] = useState<'all' | 'summary' | 'tree'>('all');
+  const [exportType, setExportType] = useState<'all' | 'circular' | 'summary' | 'tree'>('circular');
   const [orientation, setOrientation] = useState<'portrait' | 'landscape'>('portrait');
+  const [quality, setQuality] = useState<'standard' | 'high' | 'ultra'>('high');
   const [isGenerating, setIsGenerating] = useState(false);
   const [downloadSuccess, setDownloadSuccess] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const printDocRef = useRef<HTMLDivElement>(null);
 
   if (!isOpen) return null;
 
+  const handleDownloadCircularSvg = () => {
+    try {
+      const svgString = generateRadialTreeSvg(rootNode);
+      const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'Desta_Family_Circular_Tree.svg';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Failed to download SVG:', err);
+    }
+  };
+
   const handleDownloadPdf = async () => {
     if (!printDocRef.current) return;
     setIsGenerating(true);
     setDownloadSuccess(false);
+    setErrorMessage(null);
 
     try {
       const fileName = exportType === 'all' 
-        ? 'Desta-Family-Tree-Complete-Report.pdf'
-        : exportType === 'summary'
-          ? 'Desta-Summary-Dashboard.pdf'
-          : 'Desta-Family-Tree-Lineage.pdf';
+        ? 'Desta-Family-Tree-Complete-Report-HD.pdf'
+        : exportType === 'circular'
+          ? 'Desta-Circular-Family-Tree-HD.pdf'
+          : exportType === 'summary'
+            ? 'Desta-Summary-Dashboard-HD.pdf'
+            : 'Desta-Family-Tree-Lineage-HD.pdf';
 
       await downloadElementAsPdf(printDocRef.current, {
         fileName,
         orientation,
+        quality,
+        isCircularPoster: exportType === 'circular',
       });
 
       setDownloadSuccess(true);
       setTimeout(() => setDownloadSuccess(false), 4000);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('PDF generation error:', err);
+      const msg = err instanceof Error ? err.message : 'PDF ማመንጨት አልተሳካም። እባክዎ "በቀጥታ አትም" የሚለውን ይጠቀሙ።';
+      setErrorMessage(msg);
     } finally {
       setIsGenerating(false);
     }
@@ -135,26 +164,31 @@ export const PdfExportModal: React.FC<PdfExportModalProps> = ({
                     </span>
                   </div>
                   <div className={`text-[11px] mt-0.5 ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
-                    ማጠቃለያ ዳሽቦርድ + ሙሉ የ፹፭ አባላት የዘር ዛፍ
+                    ማጠቃለያ ዳሽቦርድ + ሙሉ የ168 አባላት የዘር ዛፍ (5 ትውልዶች)
                   </div>
                 </div>
               </button>
 
-              {/* Option 2: Summary Only */}
+              {/* Option 2: Circular Family Tree */}
               <button
                 type="button"
-                onClick={() => setExportType('summary')}
+                onClick={() => setExportType('circular')}
                 className={`p-3 rounded-xl border text-left flex items-start gap-2.5 transition-all ${
-                  exportType === 'summary'
-                    ? (isLight ? 'bg-sky-50 border-sky-500 text-sky-950 ring-1 ring-sky-500' : 'bg-sky-500/15 border-sky-400 text-white ring-1 ring-sky-400')
+                  exportType === 'circular'
+                    ? (isLight ? 'bg-amber-50 border-amber-500 text-amber-950 ring-1 ring-amber-500' : 'bg-amber-500/15 border-amber-400 text-white ring-1 ring-amber-400')
                     : (isLight ? 'bg-slate-50/70 hover:bg-slate-100 border-slate-200 text-slate-700' : 'bg-slate-800/50 hover:bg-slate-800 border-slate-750 text-slate-300')
                 }`}
               >
-                <Layers size={16} className="mt-0.5 text-amber-500 shrink-0" />
-                <div>
-                  <div className="font-bold text-xs">ማጠቃለያ ዳሽቦርድ (Summary)</div>
+                <Compass size={16} className="mt-0.5 text-amber-500 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="font-bold text-xs flex items-center justify-between">
+                    <span>ክብ የዘር ሐረግ (Circular Tree)</span>
+                    <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-700 dark:text-amber-300 font-normal">
+                      አውርድ
+                    </span>
+                  </div>
                   <div className={`text-[11px] mt-0.5 ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
-                    ዋና ዋና መረጃዎች፣ የ፯ ቅርንጫፎች እና የትውልድ ስርጭት
+                    Download Circular Family Tree (5 Concentric Rings · 168 Nodes)
                   </div>
                 </div>
               </button>
@@ -173,43 +207,82 @@ export const PdfExportModal: React.FC<PdfExportModalProps> = ({
                 <div>
                   <div className="font-bold text-xs">የቤተሰብ ዛፍ ብቻ (Tree)</div>
                   <div className={`text-[11px] mt-0.5 ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
-                    የደስታና የ፯ቱ ቅርንጫፎች ሙሉ ተዋረድ ዝርዝር
+                    የደስታና የ፰ቱ ዋና ዋና ቅርንጫፎች ሙሉ ተዋረድ ዝርዝር
                   </div>
                 </div>
               </button>
             </div>
           </div>
 
-          {/* Orientation Selector */}
-          <div className="flex items-center gap-4 text-xs">
-            <span className={`font-semibold ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>
-              ገጽ አቀማመጥ (Orientation):
-            </span>
-            <div className={`flex items-center p-0.5 rounded-lg border ${
-              isLight ? 'bg-slate-100 border-slate-200' : 'bg-slate-800 border-slate-700'
-            }`}>
-              <button
-                type="button"
-                onClick={() => setOrientation('portrait')}
-                className={`px-3 py-1 rounded-md transition-all font-medium ${
-                  orientation === 'portrait'
-                    ? (isLight ? 'bg-white text-slate-900 shadow-2xs font-bold' : 'bg-slate-900 text-white shadow-2xs font-bold')
-                    : (isLight ? 'text-slate-600' : 'text-slate-400')
-                }`}
-              >
-                ቁመት (Portrait)
-              </button>
-              <button
-                type="button"
-                onClick={() => setOrientation('landscape')}
-                className={`px-3 py-1 rounded-md transition-all font-medium ${
-                  orientation === 'landscape'
-                    ? (isLight ? 'bg-white text-slate-900 shadow-2xs font-bold' : 'bg-slate-900 text-white shadow-2xs font-bold')
-                    : (isLight ? 'text-slate-600' : 'text-slate-400')
-                }`}
-              >
-                አግድም (Landscape)
-              </button>
+          {/* Row of Settings: Orientation & Quality Resolution */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            {/* Orientation Selector */}
+            <div className="flex items-center justify-between sm:justify-start gap-3">
+              <span className={`font-semibold shrink-0 ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>
+                አቀማመጥ (Orientation):
+              </span>
+              <div className={`flex items-center p-0.5 rounded-lg border ${
+                isLight ? 'bg-slate-100 border-slate-200' : 'bg-slate-800 border-slate-700'
+              }`}>
+                <button
+                  type="button"
+                  onClick={() => setOrientation('portrait')}
+                  className={`px-2.5 py-1 rounded-md transition-all font-medium ${
+                    orientation === 'portrait'
+                      ? (isLight ? 'bg-white text-slate-900 shadow-2xs font-bold' : 'bg-slate-900 text-white shadow-2xs font-bold')
+                      : (isLight ? 'text-slate-600' : 'text-slate-400')
+                  }`}
+                >
+                  ቁመት (Portrait)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setOrientation('landscape')}
+                  className={`px-2.5 py-1 rounded-md transition-all font-medium ${
+                    orientation === 'landscape'
+                      ? (isLight ? 'bg-white text-slate-900 shadow-2xs font-bold' : 'bg-slate-900 text-white shadow-2xs font-bold')
+                      : (isLight ? 'text-slate-600' : 'text-slate-400')
+                  }`}
+                >
+                  አግድም (Landscape)
+                </button>
+              </div>
+            </div>
+
+            {/* Quality Resolution Selector */}
+            <div className="flex items-center justify-between sm:justify-start gap-3">
+              <span className={`font-semibold shrink-0 flex items-center gap-1 ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>
+                <Sparkles size={12} className="text-amber-500" />
+                <span>ጥራት (Quality):</span>
+              </span>
+              <div className={`flex items-center p-0.5 rounded-lg border ${
+                isLight ? 'bg-slate-100 border-slate-200' : 'bg-slate-800 border-slate-700'
+              }`}>
+                <button
+                  type="button"
+                  onClick={() => setQuality('high')}
+                  className={`px-2.5 py-1 rounded-md transition-all font-medium ${
+                    quality === 'high'
+                      ? (isLight ? 'bg-white text-slate-900 shadow-2xs font-bold' : 'bg-slate-900 text-white shadow-2xs font-bold')
+                      : (isLight ? 'text-slate-600' : 'text-slate-400')
+                  }`}
+                  title="High Quality (300 DPI equivalent) - Best for printing"
+                >
+                  ከፍተኛ (HD 300 DPI)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setQuality('ultra')}
+                  className={`px-2.5 py-1 rounded-md transition-all font-medium flex items-center gap-1 ${
+                    quality === 'ultra'
+                      ? (isLight ? 'bg-white text-amber-900 shadow-2xs font-bold' : 'bg-slate-900 text-amber-300 shadow-2xs font-bold')
+                      : (isLight ? 'text-slate-600' : 'text-slate-400')
+                  }`}
+                  title="Ultra HD (400 DPI equivalent) - Ultra crisp vector precision"
+                >
+                  <span>እጅግ የላቀ (Ultra-HD)</span>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -251,9 +324,30 @@ export const PdfExportModal: React.FC<PdfExportModalProps> = ({
                 PDF በተሳካ ሁኔታ ወርዷል!
               </span>
             )}
+            {errorMessage && (
+              <span className="text-xs text-rose-500 font-semibold flex items-center gap-1">
+                ⚠️ {errorMessage}
+              </span>
+            )}
           </div>
 
           <div className="flex items-center gap-2.5">
+            {exportType === 'circular' && (
+              <button
+                type="button"
+                onClick={handleDownloadCircularSvg}
+                className={`px-4 py-2 rounded-xl text-xs font-semibold border flex items-center gap-1.5 transition-all duration-150 active:scale-95 shadow-2xs ${
+                  isLight 
+                    ? 'bg-amber-50 hover:bg-amber-100 border-amber-300 text-amber-900' 
+                    : 'bg-amber-500/15 hover:bg-amber-500/25 border-amber-500/30 text-amber-300'
+                }`}
+                title="Download Standalone Vector SVG"
+              >
+                <Download size={14} className="text-amber-600 dark:text-amber-400" />
+                <span>SVG አውርድ (Vector)</span>
+              </button>
+            )}
+
             <button
               type="button"
               onClick={handlePrint}
@@ -288,7 +382,11 @@ export const PdfExportModal: React.FC<PdfExportModalProps> = ({
               ) : (
                 <>
                   <FileDown size={14} className={isLight ? 'text-amber-400' : 'text-sky-600'} />
-                  <span>PDF አውርድ (Download PDF)</span>
+                  <span>
+                    {exportType === 'circular'
+                      ? 'ክብ ዛፍ PDF አውርድ (Download Circular Tree)'
+                      : 'PDF አውርድ (Download PDF)'}
+                  </span>
                 </>
               )}
             </button>

@@ -1,15 +1,16 @@
 import React from 'react';
 import { FamilyNode } from './destaFamilyData';
 import { FlattenedNode, TreeStats, getCleanName } from './familyUtils';
+import { generateRadialTreeSvg } from './RadialTreeSvgExport';
 
 interface PdfPrintDocumentProps {
   rootNode: FamilyNode;
   flattenedNodes: FlattenedNode[];
   stats: TreeStats;
-  exportType: 'all' | 'summary' | 'tree';
+  exportType: 'all' | 'circular' | 'summary' | 'tree';
 }
 
-const GEEZ_NUMS = ['፩', '፪', '፫', '፬', '፭', '፮', '፯'];
+const GEEZ_NUMS = ['፩', '፪', '፫', '፬', '፭', '፮', '፯', '፰'];
 
 function countDescendants(node: FamilyNode): number {
   if (!node.children || node.children.length === 0) return 0;
@@ -30,13 +31,15 @@ export const PdfPrintDocument: React.FC<PdfPrintDocumentProps> = ({
     g2: flattenedNodes.filter(n => n.generation === 2).length,
     g3: flattenedNodes.filter(n => n.generation === 3).length,
     g4: flattenedNodes.filter(n => n.generation === 4).length,
+    g5: flattenedNodes.filter(n => n.generation >= 5).length,
   };
 
   const verifiedPercent = stats.totalMembers > 0 
     ? Math.round((stats.confirmedCount / stats.totalMembers) * 100) 
     : 100;
 
-  const showSummary = exportType === 'all' || exportType === 'summary';
+  const showCircular = exportType === 'circular';
+  const showSummary = exportType === 'summary';
   const showTree = exportType === 'all' || exportType === 'tree';
 
   return (
@@ -62,14 +65,42 @@ export const PdfPrintDocument: React.FC<PdfPrintDocumentProps> = ({
         <div className="text-right text-xs">
           <div className="font-bold text-slate-800">
             {exportType === 'all' && 'ሙሉ ሪፖርት (All: Summary & Tree)'}
+            {exportType === 'circular' && 'ክብ የዘር ሐረግ (Circular Family Tree)'}
             {exportType === 'summary' && 'ማጠቃለያ ዳሽቦርድ (Summary Only)'}
             {exportType === 'tree' && 'የቤተሰብ ዛፍ ተዋረድ (Tree Only)'}
           </div>
           <div className="text-[11px] text-slate-500 mt-0.5">
-            ጠቅላላ አባላት: {stats.totalMembers} · ፯ ቅርንጫፎች
+            ጠቅላላ አባላት፡ 168 (168 Listed Nodes / 8 Primary Branches / 5 Generations)
           </div>
         </div>
       </div>
+
+      {/* SECTION: CIRCULAR RADIAL FAMILY TREE */}
+      {showCircular && (
+        <div className="mb-4">
+          <div className="flex items-center justify-between mb-3 border-b border-slate-200 pb-2">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#C5A059]" />
+              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-800">
+                ክፍል፡ ክብ የዘር ሐረግ (Circular Radial Family Tree Poster)
+              </h2>
+            </div>
+            <span className="text-[11px] font-mono font-medium text-slate-500 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+              High Resolution Vector Heritage Poster · 5 Concentric Rings
+            </span>
+          </div>
+
+          <div className="border-2 border-[#C5A059]/40 rounded-2xl p-6 bg-[#FBF9F5] shadow-xs flex flex-col items-center">
+            <div 
+              className="w-full max-w-[760px] aspect-square flex items-center justify-center [&>svg]:w-full [&>svg]:h-auto [&>svg]:drop-shadow-xs"
+              dangerouslySetInnerHTML={{ __html: generateRadialTreeSvg(rootNode) }} 
+            />
+            <div className="mt-4 text-center text-xs text-slate-700 font-serif max-w-lg">
+              የደስታ የቤተሰብ ዛፍ ሙሉ ሪፖርት · ፰ ዋና ዋና ቅርንጫፎች · 5 ትውልዶች (ጠቅላላ አባላት፡ 168)
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* SECTION 1: SUMMARY DASHBOARD */}
       {showSummary && (

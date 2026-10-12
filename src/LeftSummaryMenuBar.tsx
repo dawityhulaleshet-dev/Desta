@@ -28,7 +28,7 @@ interface LeftSummaryMenuBarProps {
   onOpenArtisticTree?: () => void;
 }
 
-const GEEZ_NUMS = ['፩', '፪', '፫', '፬', '፭', '፮', '፯'];
+const GEEZ_NUMS = ['፩', '፪', '፫', '፬', '፭', '፮', '፯', '፰'];
 
 function countDescendants(node: FamilyNode): number {
   if (!node.children || node.children.length === 0) return 0;

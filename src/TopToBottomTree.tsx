@@ -33,8 +33,8 @@ interface TopToBottomTreeProps {
   onSelectBranch?: (index: number | null) => void;
 }
 
-// Ge'ez numerals for 1 through 7
-const GEEZ_NUMS = ['፩', '፪', '፫', '፬', '፭', '፮', '፯'];
+// Ge'ez numerals for 1 through 8
+const GEEZ_NUMS = ['፩', '፪', '፫', '፬', '፭', '፮', '፯', '፰'];
 
 function countTotalDescendants(node: FamilyNode): number {
   if (!node.children || node.children.length === 0) return 0;

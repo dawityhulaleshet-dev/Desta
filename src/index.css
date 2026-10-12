@@ -6,6 +6,14 @@
   }
 }
 
+.font-heritage-en {
+  font-family: 'EB Garamond', Garamond, Georgia, serif;
+}
+
+.font-heritage-am {
+  font-family: 'Noto Serif Ethiopic', 'Noto Sans Ethiopic', Georgia, serif;
+}
+
 /* Custom subtle scrollbars */
 ::-webkit-scrollbar {
   width: 6px;

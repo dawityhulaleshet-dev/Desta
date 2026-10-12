@@ -14,6 +14,7 @@ import { SummaryDashboard } from './SummaryDashboard';
 import { LeftSummaryMenuBar } from './LeftSummaryMenuBar';
 import { ArtisticVisualTree } from './ArtisticVisualTree';
 import { PdfExportModal } from './PdfExportModal';
+import { FamilyTreePage } from './FamilyTreePage';
 import { 
   Share2, 
   Search, 
@@ -37,8 +38,11 @@ import {
   Sun,
   Moon,
   Menu,
-  X
+  X,
+  Compass
 } from 'lucide-react';
+
+export type TabType = 'family-tree' | 'visual' | 'topdown' | 'tree' | 'branches' | 'dashboard';
 
 export default function App() {
   const [treeData, setTreeData] = useState<FamilyNode>(initialTreeData);
@@ -46,7 +50,48 @@ export default function App() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterUncertainOnly, setFilterUncertainOnly] = useState(false);
-  const [activeTab, setActiveTab] = useState<'visual' | 'topdown' | 'tree' | 'branches' | 'dashboard'>('visual');
+  
+  // Route /family-tree synchronization
+  const [activeTab, setActiveTab] = useState<TabType>(() => {
+    if (typeof window !== 'undefined') {
+      const p = window.location.pathname;
+      const h = window.location.hash;
+      if (p === '/family-tree' || h === '#family-tree' || h === '#/family-tree') {
+        return 'family-tree';
+      }
+    }
+    return 'family-tree';
+  });
+
+  const handleNavigate = (tab: TabType) => {
+    setActiveTab(tab);
+    if (typeof window !== 'undefined') {
+      const url = tab === 'family-tree' ? '/family-tree' : `/?tab=${tab}`;
+      window.history.pushState({ tab }, '', url);
+    }
+  };
+
+  React.useEffect(() => {
+    const handlePopState = () => {
+      if (typeof window === 'undefined') return;
+      const p = window.location.pathname;
+      const h = window.location.hash;
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab') as TabType;
+
+      if (p === '/family-tree' || h === '#family-tree' || h === '#/family-tree') {
+        setActiveTab('family-tree');
+      } else if (tabParam && ['visual', 'dashboard'].includes(tabParam)) {
+        setActiveTab(tabParam);
+      } else {
+        setActiveTab('family-tree');
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   const [selectedNode, setSelectedNode] = useState<FlattenedNode | null>(null);
   const [expandedNodes, setExpandedNodes] = useState<Record<string, boolean>>({});
   const [activeBranchIndex, setActiveBranchIndex] = useState<number>(0);
@@ -371,8 +416,20 @@ export default function App() {
           <nav className={`hidden md:flex items-center p-1 rounded-xl border gap-1 transition-colors overflow-x-auto max-w-full ${
             isLight ? 'bg-slate-200/60 border-slate-300/70' : 'bg-slate-900 border-slate-800'
           }`}>
+            {/* New Family Tree Premier Page Tab */}
             <button
-              onClick={() => setActiveTab('visual')}
+              onClick={() => handleNavigate('family-tree')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 active:scale-[0.98] flex items-center gap-1.5 whitespace-nowrap ${
+                activeTab === 'family-tree'
+                  ? 'bg-[#5C2027] text-white shadow-xs font-bold'
+                  : isLight ? 'text-[#5C2027] hover:bg-white/80 font-semibold' : 'text-amber-200 hover:bg-slate-800/80 font-medium'
+              }`}
+            >
+              <Compass size={13} className={activeTab === 'family-tree' ? 'text-amber-300' : 'text-[#C5A059]'} />
+              <span>Family Tree (የዘር ሐረግ)</span>
+            </button>
+            <button
+              onClick={() => handleNavigate('visual')}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 active:scale-[0.98] flex items-center gap-1.5 whitespace-nowrap ${
                 activeTab === 'visual'
                   ? isLight ? 'bg-amber-500 text-slate-950 shadow-xs font-bold' : 'bg-amber-400 text-slate-950 shadow-xs font-bold'
@@ -381,50 +438,6 @@ export default function App() {
             >
               <Sparkles size={13} className={activeTab === 'visual' ? 'text-slate-950' : 'text-amber-500'} />
               <span>ሥዕላዊ ዛፍ (Artistic Tree)</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('topdown')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 active:scale-[0.98] flex items-center gap-1.5 whitespace-nowrap ${
-                activeTab === 'topdown'
-                  ? isLight ? 'bg-white text-slate-950 shadow-xs font-bold' : 'bg-slate-800 text-white shadow-xs font-bold'
-                  : isLight ? 'text-slate-600 hover:text-slate-950 hover:bg-white/50' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
-              }`}
-            >
-              <Network size={13} className={activeTab === 'topdown' ? (isLight ? 'text-sky-600' : 'text-sky-400') : ''} />
-              <span>ዛፍ (Tree)</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('tree')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 active:scale-[0.98] flex items-center gap-1.5 whitespace-nowrap ${
-                activeTab === 'tree'
-                  ? isLight ? 'bg-white text-slate-950 shadow-xs font-bold' : 'bg-slate-800 text-white shadow-xs font-bold'
-                  : isLight ? 'text-slate-600 hover:text-slate-950 hover:bg-white/50' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
-              }`}
-            >
-              <ListTree size={13} className={activeTab === 'tree' ? (isLight ? 'text-sky-600' : 'text-sky-400') : ''} />
-              <span>ዝርዝር (List)</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('branches')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 active:scale-[0.98] flex items-center gap-1.5 whitespace-nowrap ${
-                activeTab === 'branches'
-                  ? isLight ? 'bg-white text-slate-950 shadow-xs font-bold' : 'bg-slate-800 text-white shadow-xs font-bold'
-                  : isLight ? 'text-slate-600 hover:text-slate-950 hover:bg-white/50' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
-              }`}
-            >
-              <Layers size={13} className={activeTab === 'branches' ? (isLight ? 'text-sky-600' : 'text-sky-400') : ''} />
-              <span>ቅርንጫፎች (Branches)</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('dashboard')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 active:scale-[0.98] flex items-center gap-1.5 whitespace-nowrap ${
-                activeTab === 'dashboard'
-                  ? isLight ? 'bg-white text-slate-950 shadow-xs font-bold' : 'bg-slate-800 text-white shadow-xs font-bold'
-                  : isLight ? 'text-slate-600 hover:text-slate-950 hover:bg-white/50' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
-              }`}
-            >
-              <LayoutDashboard size={13} className={activeTab === 'dashboard' ? (isLight ? 'text-sky-600' : 'text-sky-400') : ''} />
-              <span>ማጠቃለያ (Summary)</span>
             </button>
           </nav>
 
@@ -458,7 +471,7 @@ export default function App() {
             {/* Slot for Artistic Tree Zoom & Search Controls Portal */}
             <div id="header-right-controls" className="flex items-center gap-1.5" />
 
-            {/* PDF Button (Desktop/Tablet) */}
+            {/* Download Circular Family Tree Button (Desktop/Tablet) */}
             <button
               onClick={() => setIsPdfModalOpen(true)}
               className={`hidden md:flex px-3 py-1.5 rounded-xl border text-xs font-semibold items-center gap-2 transition-all duration-150 active:scale-95 shadow-2xs ${
@@ -466,10 +479,10 @@ export default function App() {
                   ? 'bg-slate-900 hover:bg-slate-800 text-white border-slate-900' 
                   : 'bg-white hover:bg-slate-100 text-slate-950 border-white'
               }`}
-              title="PDF አውርድ (Download PDF Report)"
+              title="ክበበ ዘር ሐረግ አውርድ (Download Circular Family Tree)"
             >
               <FileDown size={14} className={isLight ? 'text-amber-400' : 'text-sky-600'} />
-              <span>PDF አውርድ</span>
+              <span>ክብ ዛፍ አውርድ</span>
             </button>
 
             <button
@@ -573,8 +586,22 @@ export default function App() {
                   ክፍሎች (Navigation)
                 </label>
                 <nav className="flex flex-col gap-1">
+                  {/* Family Tree Premier Page Tab */}
                   <button
-                    onClick={() => { setActiveTab('visual'); setIsMobileMenuOpen(false); }}
+                    onClick={() => { handleNavigate('family-tree'); setIsMobileMenuOpen(false); }}
+                    className={`w-full px-3 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2.5 transition-all active:scale-[0.98] ${
+                      activeTab === 'family-tree'
+                        ? 'bg-[#5C2027] text-white font-bold shadow-xs'
+                        : isLight ? 'text-slate-800 hover:bg-slate-100' : 'text-amber-200 hover:bg-slate-900'
+                    }`}
+                  >
+                    <Compass size={15} className={activeTab === 'family-tree' ? 'text-amber-300' : 'text-[#C5A059]'} />
+                    <span className="flex-1 text-left font-bold">Family Tree (የዘር ሐረግ)</span>
+                    {activeTab === 'family-tree' && <ChevronRight size={13} />}
+                  </button>
+
+                  <button
+                    onClick={() => { handleNavigate('visual'); setIsMobileMenuOpen(false); }}
                     className={`w-full px-3 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2.5 transition-all active:scale-[0.98] ${
                       activeTab === 'visual'
                         ? 'bg-amber-500 text-slate-950 font-bold shadow-xs'
@@ -584,58 +611,6 @@ export default function App() {
                     <Sparkles size={15} className={activeTab === 'visual' ? 'text-slate-950' : 'text-amber-500'} />
                     <span className="flex-1 text-left">ሥዕላዊ ዛፍ (Artistic Tree)</span>
                     {activeTab === 'visual' && <ChevronRight size={13} />}
-                  </button>
-
-                  <button
-                    onClick={() => { setActiveTab('topdown'); setIsMobileMenuOpen(false); }}
-                    className={`w-full px-3 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2.5 transition-all active:scale-[0.98] ${
-                      activeTab === 'topdown'
-                        ? isLight ? 'bg-sky-500 text-white font-bold shadow-xs' : 'bg-sky-600 text-white font-bold shadow-xs'
-                        : isLight ? 'text-slate-700 hover:bg-slate-100' : 'text-slate-300 hover:bg-slate-900'
-                    }`}
-                  >
-                    <Network size={15} className={activeTab === 'topdown' ? 'text-white' : 'text-sky-500'} />
-                    <span className="flex-1 text-left">ዛፍ (Top-to-Bottom Tree)</span>
-                    {activeTab === 'topdown' && <ChevronRight size={13} />}
-                  </button>
-
-                  <button
-                    onClick={() => { setActiveTab('tree'); setIsMobileMenuOpen(false); }}
-                    className={`w-full px-3 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2.5 transition-all active:scale-[0.98] ${
-                      activeTab === 'tree'
-                        ? isLight ? 'bg-sky-500 text-white font-bold shadow-xs' : 'bg-sky-600 text-white font-bold shadow-xs'
-                        : isLight ? 'text-slate-700 hover:bg-slate-100' : 'text-slate-300 hover:bg-slate-900'
-                    }`}
-                  >
-                    <ListTree size={15} className={activeTab === 'tree' ? 'text-white' : 'text-sky-500'} />
-                    <span className="flex-1 text-left">ዝርዝር (List Hierarchy)</span>
-                    {activeTab === 'tree' && <ChevronRight size={13} />}
-                  </button>
-
-                  <button
-                    onClick={() => { setActiveTab('branches'); setIsMobileMenuOpen(false); }}
-                    className={`w-full px-3 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2.5 transition-all active:scale-[0.98] ${
-                      activeTab === 'branches'
-                        ? isLight ? 'bg-sky-500 text-white font-bold shadow-xs' : 'bg-sky-600 text-white font-bold shadow-xs'
-                        : isLight ? 'text-slate-700 hover:bg-slate-100' : 'text-slate-300 hover:bg-slate-900'
-                    }`}
-                  >
-                    <Layers size={15} className={activeTab === 'branches' ? 'text-white' : 'text-sky-500'} />
-                    <span className="flex-1 text-left">ቅርንጫፎች (7 Branches)</span>
-                    {activeTab === 'branches' && <ChevronRight size={13} />}
-                  </button>
-
-                  <button
-                    onClick={() => { setActiveTab('dashboard'); setIsMobileMenuOpen(false); }}
-                    className={`w-full px-3 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2.5 transition-all active:scale-[0.98] ${
-                      activeTab === 'dashboard'
-                        ? isLight ? 'bg-sky-500 text-white font-bold shadow-xs' : 'bg-sky-600 text-white font-bold shadow-xs'
-                        : isLight ? 'text-slate-700 hover:bg-slate-100' : 'text-slate-300 hover:bg-slate-900'
-                    }`}
-                  >
-                    <LayoutDashboard size={15} className={activeTab === 'dashboard' ? 'text-white' : 'text-sky-500'} />
-                    <span className="flex-1 text-left">ማጠቃለያ (Summary Dashboard)</span>
-                    {activeTab === 'dashboard' && <ChevronRight size={13} />}
                   </button>
                 </nav>
               </div>
@@ -691,7 +666,20 @@ export default function App() {
       )}
 
       {/* Main Body */}
-      <main className="flex-1 w-full px-3 sm:px-6 py-3 flex flex-col gap-3">
+      <main className={`flex-1 w-full ${activeTab === 'family-tree' ? 'px-0 py-0' : 'px-3 sm:px-6 py-3'} flex flex-col gap-3`}>
+        {/* Tab 0: Family Tree Luxury Heritage Page */}
+        {activeTab === 'family-tree' && (
+          <div className="w-full">
+            <FamilyTreePage
+              rootNode={treeData}
+              flattenedNodes={flattenedList}
+              stats={stats}
+              theme={theme}
+              onOpenPdfModal={() => setIsPdfModalOpen(true)}
+            />
+          </div>
+        )}
+
         {/* Tab -1: Artistic Visual Tree (Botanical Oil Painting View) */}
         {activeTab === 'visual' && (
           <div className="w-full flex flex-col gap-3">

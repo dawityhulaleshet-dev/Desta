@@ -15,7 +15,7 @@ export function computeTreeStats(root: FamilyNode): TreeStats {
 
   function traverse(node: FamilyNode, currentGen: number) {
     total++;
-    if (node.name.includes('[?]')) {
+    if (node.reviewRequired || node.name.includes('[?]')) {
       uncertain++;
     }
     if (currentGen > maxGen) {
@@ -41,11 +41,13 @@ export function computeTreeStats(root: FamilyNode): TreeStats {
 
 export interface FlattenedNode {
   id: string;
+  memberId?: string;
   name: string;
   isUncertain: boolean;
   generation: number;
   path: string[];
   parentId: string | null;
+  branchName?: string | null;
   childrenCount: number;
   nodeRef: FamilyNode;
 }
@@ -54,16 +56,18 @@ export function flattenTree(root: FamilyNode): FlattenedNode[] {
   const result: FlattenedNode[] = [];
 
   function traverse(node: FamilyNode, gen: number, path: string[], parentId: string | null, index: number) {
-    const id = `${path.join('-')}-${index}-${node.name}`;
+    const id = node.id || `${path.join('-')}-${index}-${node.name}`;
     const currentPath = [...path, node.name];
     
     result.push({
       id,
+      memberId: node.id,
       name: node.name,
-      isUncertain: node.name.includes('[?]'),
-      generation: gen,
+      isUncertain: !!node.reviewRequired || node.name.includes('[?]'),
+      generation: node.generation || gen,
       path: currentPath,
       parentId,
+      branchName: node.branchName,
       childrenCount: node.children ? node.children.length : 0,
       nodeRef: node,
     });
